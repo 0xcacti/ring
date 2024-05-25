@@ -16,6 +16,7 @@ async fn main() {
         Ok(ip) => match ip {
             IpAddr::V4(ipv4) => {
                 println!("{} is a valid ip address", ipv4);
+                println!("Constructing a valid ICMP packet");
             }
             IpAddr::V6(ipv6) => {
                 println!("{} is a valid ip address", ipv6);
