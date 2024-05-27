@@ -6,4 +6,6 @@ how to both construct and interpret different types of ICMP requests.
 I aim to have full feature parity with the default ping, including all 
 flags.
 
-ICMP is confusing
+ICMP is confusing, like really confusing
+
+
