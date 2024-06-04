@@ -19,7 +19,7 @@ fn main() {
                 let source_ip = IpAddr::V4(ip::get_machine_ipv4().unwrap());
                 println!("source ip: {}", source_ip);
                 let destination_ip = IpAddr::V4(ipv4);
-                let packet = icmp::Packet::new_ipv4_echo_request(source_ip, destination_ip, 0x1234);
+                let packet = icmp::Packet::new_ipv4_echo_request(source_ip, destination_ip, 0xabcd);
                 println!("ip header checksum: {:X}", packet.header.checksum);
                 println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
                 println!("total packet length: {}", packet.header.length);
