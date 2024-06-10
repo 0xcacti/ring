@@ -7,3 +7,6 @@ edition = "2021"
 clap = { version = "4.4.6", features = ["derive", "cargo"] }
 tokio = { version = "1.32.0", features = ["full"] }
 
+[lib]
+path = "src/lib.rs"
+
