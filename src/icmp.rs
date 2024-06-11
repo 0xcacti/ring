@@ -56,33 +56,10 @@ fn get_machine_ipv4() -> Option<Ipv4Addr> {
 }
 
 impl Packet {
-    pub fn new_ipv4_echo_request(destination_ip: IpAddr) -> Packet {
-        let dest = match destination_ip {
-            IpAddr::V4(addr) => addr.octets(),
-            _ => panic!("Only IPv4 is supported"),
-        };
-
-        let source_ip = get_machine_ipv4().unwrap().octets();
-        let process_id = process::id() as u16;
+    pub fn new_ipv4_echo_request(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Packet {
         let icmp_id = rand::random::<u16>();
 
-        let mut header = Header {
-            version: 4,
-            ihl: 5,
-            tos: 0,
-
-            // len(Header) + len(ICMPHeader) + 0 (no payload)
-            //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
-            length: 28,
-            id: process_id,
-            flags: 0,
-            fragment_offset: 0,
-            ttl: 64,
-            protocol: 1, // ICMP
-            checksum: 0,
-            source: source_ip,
-            destination: dest,
-        };
+        let mut header = Header::new_ip_header(source_ip, destination_ip, id);
         header.compute_checksum();
 
         let mut icmp_header = ICMPHeader {
@@ -103,7 +80,79 @@ impl Packet {
 }
 
 impl Header {
-    fn compute_checksum(&mut self) {}
+    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Header {
+        // let process_id = process::id() as u16;
+
+        let source = match source_ip {
+            IpAddr::V4(addr) => addr.octets(),
+            _ => panic!("Only IPv4 is supported"),
+        };
+
+        let destination = match destination_ip {
+            IpAddr::V4(addr) => addr.octets(),
+            _ => panic!("Only IPv4 is supported"),
+        };
+
+        Header {
+            version: 4,
+            ihl: 5,
+            tos: 0,
+
+            // len(Header) + len(ICMPHeader) + 0 (no payload)
+            //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
+            length: 0x028, // verify length
+            id,
+            flags: 0,
+            fragment_offset: 0,
+            ttl: 64,
+            protocol: 1, // ICMP
+            checksum: 0,
+            source,
+            destination,
+        }
+    }
+
+    fn compute_checksum(&mut self) {
+        let mut sum: u32 = 0;
+        sum += (self.version as u32) << 12
+            | (self.ihl as u32) << 8
+            | (self.tos as u32) + (self.length as u32);
+
+        println!("Sum after first term: {:X}", sum);
+        sum += self.id as u32 + (self.flags as u32) << 13 | (self.fragment_offset as u32);
+        sum += (self.ttl as u32) << 8 | (self.protocol as u32) + 0; // 0 term is header checksum
+                                                                    //
+
+        sum += self.protocol as u32;
+        println!("Sum after protocol: {:X}", sum);
+        let source_term = ((self.source[0] as u32) << 8 | (self.source[1] as u32))
+            + ((self.source[2] as u32) << 8 | (self.source[3] as u32));
+
+        sum += source_term;
+        println!(
+            "self.source_01: {:X}",
+            (self.source[0] as u32) << 8 | self.source[1] as u32
+        );
+        println!(
+            "self.source_23: {:X}",
+            (self.source[2] as u32) << 8 | self.source[3] as u32
+        );
+
+        println!("source_term: {:X}", source_term);
+
+        println!("Sum after source: {:X}", sum);
+
+        let destination_term = ((self.destination[0] as u32) << 8 | (self.destination[1] as u32))
+            + ((self.destination[2] as u32) << 8 | (self.destination[3] as u32));
+
+        sum += destination_term;
+
+        let carry_term = (sum >> 16) as u16;
+        let truncated_sum = (sum & 0xFFFF) as u16;
+        let pre_negation_cs = truncated_sum + carry_term;
+        let checksum = 0xFFFF - pre_negation_cs;
+        self.checksum = checksum;
+    }
 }
 
 impl ICMPHeader {
@@ -130,10 +179,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_compute_icmp_checksum() {
+    fn it_computes_icmp_checksum() {
         let mut icmp_header = ICMPHeader::new_echo_request_header(0x1234, 0x001);
         icmp_header.compute_icmp_checksum();
         print!("{:X}", icmp_header.checksum);
         assert_eq!(icmp_header.checksum, 0xE5CA);
+    }
+
+    #[test]
+    fn it_computes_ip_header_checksum() {
+        let source = IpAddr::V4(Ipv4Addr::new(10, 10, 10, 2));
+        let destination = IpAddr::V4(Ipv4Addr::new(10, 10, 10, 1));
+        let mut header = Header::new_ip_header(source, destination, 0xabcd);
+        header.compute_checksum();
+        assert_eq!(header.checksum, 0xa6ec);
     }
 }
