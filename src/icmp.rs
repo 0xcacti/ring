@@ -100,12 +100,13 @@ impl Header {
 
             // len(Header) + len(ICMPHeader) + 0 (no payload)
             //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
-            length: 0x028, // verify length
+            length: 40, // verify length
             id,
+            // TODO: test working separate out for proper
             flags: 0,
             fragment_offset: 0,
             ttl: 64,
-            protocol: 1, // ICMP
+            protocol: 6, // ICMP - 1
             checksum: 0,
             source,
             destination,
@@ -119,11 +120,18 @@ impl Header {
             | (self.tos as u32) + (self.length as u32);
 
         println!("Sum after first term: {:X}", sum);
-        sum += self.id as u32 + (self.flags as u32) << 13 | (self.fragment_offset as u32);
+        sum += self.id as u32 + ((self.flags as u32) << 13) | (self.fragment_offset as u32);
+        println!(
+            "addition term for id: {:X}",
+            self.id as u32 + (self.flags as u32) << 13 | (self.fragment_offset as u32)
+        );
+        println!("Sum after id: {:X}", sum);
         sum += (self.ttl as u32) << 8 | (self.protocol as u32) + 0; // 0 term is header checksum
-                                                                    //
+        println!(
+            "addition term for ttl: {:X}",
+            (self.ttl as u32) << 8 | (self.protocol as u32)
+        );
 
-        sum += self.protocol as u32;
         println!("Sum after protocol: {:X}", sum);
         let source_term = ((self.source[0] as u32) << 8 | (self.source[1] as u32))
             + ((self.source[2] as u32) << 8 | (self.source[3] as u32));
