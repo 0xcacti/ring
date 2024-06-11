@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.6", features = ["derive", "cargo"] }
+get_if_addrs = "0.5.3"
 tokio = { version = "1.32.0", features = ["full"] }
 
 [lib]
