@@ -38,23 +38,6 @@ pub struct Packet {
     pub icmp_payload: Option<ICMPPayload>,
 }
 
-fn get_machine_ipv4() -> Option<Ipv4Addr> {
-    match get_if_addrs() {
-        Ok(if_addrs) => {
-            for if_addr in if_addrs {
-                if let IpAddr::V4(ipv4_addr) = if_addr.addr.ip() {
-                    if !ipv4_addr.is_loopback() {
-                        return Some(ipv4_addr);
-                    }
-                }
-            }
-            return None;
-        }
-        Err(_) => panic!("Failed to get machine's IP address"), // TODO: should we panic here? or
-                                                                // set to localhost?
-    }
-}
-
 impl Packet {
     pub fn new_ipv4_echo_request(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Packet {
         let icmp_id = rand::random::<u16>();
@@ -80,7 +63,7 @@ impl Packet {
 
     pub fn serialize(&self) -> Vec<u8> {
         let mut packet = Vec::new();
-        // add asserts
+        // TODO: add asserts
         packet.push(self.header.version << 4 | self.header.ihl);
         packet.push(self.header.tos);
         packet.extend_from_slice(&self.header.length.to_be_bytes());
@@ -125,12 +108,10 @@ impl Header {
             version: 4,
             ihl: 5,
             tos: 0,
-
             // len(Header) + len(ICMPHeader) + 0 (no payload)
             //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
             length: 28, // verify length
             id,
-            // TODO: test working separate out for proper
             flags: 0,
             fragment_offset: 0,
             ttl: 64,
