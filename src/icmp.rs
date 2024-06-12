@@ -78,79 +78,30 @@ impl Packet {
         }
     }
 
-    // pub struct Header {
-    //     pub version: u8,
-    //     pub ihl: u8,     // internet header length - in 32-bit words
-    //     pub tos: u8,     // type of service
-    //     pub length: u16, // in bytes
-    //     pub id: u16,
-    //     pub flags: u8,            // limit to 3 bits
-    //     pub fragment_offset: u16, // limit to 13 bits
-    //     pub ttl: u8,
-    //     pub protocol: u8,
-    //     pub checksum: u16,
-    //     pub source: [u8; 4],
-    //     pub destination: [u8; 4],
-    // }
-    //
-    // pub struct ICMPHeader {
-    //     pub msg_type: u8,
-    //     pub code: u8,
-    //     pub checksum: u16,
-    //     pub id: u16,
-    //     pub seq_num: u16,
-    // }
-    //
-    // pub struct ICMPPayload {
-    //     pub data: [u8; 32], // TODO: determine maximum size
-    // }
-
-    pub fn serialize(&self) -> Vec<u32> {
+    pub fn serialize(&self) -> Vec<u8> {
         let mut packet = Vec::new();
-        let first_word = (self.header.version as u32) << 28
-            | (self.header.ihl as u32) << 24
-            | (self.header.tos as u32) << 16
-            | self.header.length as u32;
-        packet.push(first_word);
-        println!("Packet: {:X}", packet[0]);
+        // add asserts
+        packet.push(self.header.version << 4 | self.header.ihl);
+        packet.push(self.header.tos);
+        packet.extend_from_slice(&self.header.length.to_be_bytes());
+        packet.extend_from_slice(&self.header.id.to_be_bytes());
+        packet.extend_from_slice(
+            &(((self.header.flags as u16) << 13) | self.header.fragment_offset).to_be_bytes(),
+        );
+        packet.push(self.header.ttl);
+        packet.push(self.header.protocol);
+        packet.extend_from_slice(&self.header.checksum.to_be_bytes());
+        packet.extend_from_slice(&self.header.source);
+        packet.extend_from_slice(&self.header.destination);
+        packet.push(self.icmp_header.msg_type);
+        packet.push(self.icmp_header.code);
+        packet.extend_from_slice(&self.icmp_header.checksum.to_be_bytes());
+        packet.extend_from_slice(&self.icmp_header.id.to_be_bytes());
+        packet.extend_from_slice(&self.icmp_header.seq_num.to_be_bytes());
 
-        let second_word = (self.header.id as u32) << 16
-            | (self.header.flags as u32) << 13
-            | self.header.fragment_offset as u32;
-
-        packet.push(second_word);
-        println!("Packet: {:X}", packet[1]);
-
-        let third_word = (self.header.ttl as u32) << 24
-            | (self.header.protocol as u32) << 16
-            | self.header.checksum as u32;
-        packet.push(third_word);
-        println!("Packet: {:X}", packet[2]); // slight difference here
-
-        let fourth_word = (self.header.source[0] as u32) << 24
-            | (self.header.source[1] as u32) << 16
-            | (self.header.source[2] as u32) << 8
-            | self.header.source[3] as u32;
-        packet.push(fourth_word);
-        println!("Packet: {:X}", packet[3]);
-
-        let fifth_word = (self.header.destination[0] as u32) << 24
-            | (self.header.destination[1] as u32) << 16
-            | (self.header.destination[2] as u32) << 8
-            | self.header.destination[3] as u32;
-        packet.push(fifth_word);
-        println!("Packet: {:X}", packet[4]);
-
-        let icmp_header_first_word = (self.icmp_header.msg_type as u32) << 24
-            | (self.icmp_header.code as u32) << 16
-            | self.icmp_header.checksum as u32;
-        packet.push(icmp_header_first_word);
-        println!("Packet: {:X}", packet[5]);
-
-        let icmp_header_second_word =
-            (self.icmp_header.id as u32) << 16 | self.icmp_header.seq_num as u32;
-        packet.push(icmp_header_second_word);
-        println!("Packet: {:X}", packet[6]);
+        if let Some(payload) = &self.icmp_payload {
+            packet.extend_from_slice(&payload.data);
+        }
 
         packet
     }
@@ -255,16 +206,12 @@ mod tests {
             version: 4,
             ihl: 5,
             tos: 0,
-
-            // len(Header) + len(ICMPHeader) + 0 (no payload)
-            //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
-            length: 40, // verify length
+            length: 40,
             id,
-            // TODO: test working separate out for proper
             flags: 0,
             fragment_offset: 0,
             ttl: 64,
-            protocol: 6, // ICMP - 1
+            protocol: 6,
             checksum: 0,
             source,
             destination,
@@ -280,20 +227,23 @@ mod tests {
         let destination = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let id = 0xabcd;
         let mut packet = Packet::new_ipv4_echo_request(source, destination, id);
+
         // override defaults
         packet.icmp_header.id = 0x1234;
         packet.icmp_header.seq_num = 0x001;
         packet.icmp_header.compute_icmp_checksum();
 
-        println!("{:X}", packet.icmp_header.checksum);
-        let serialized_packet = packet.serialize();
+        let correct_packet_str = "4500001cabcd000040016bd8c0a89283080808080800e5ca12340001";
+        let correct_packet: Vec<u8> = correct_packet_str
+            .as_bytes()
+            .chunks(2)
+            .map(|chunk| {
+                let byte_str = std::str::from_utf8(chunk).unwrap();
+                u8::from_str_radix(byte_str, 16).unwrap()
+            })
+            .collect();
 
-        assert_eq!(serialized_packet[0], 0x4500001c);
-        assert_eq!(serialized_packet[1], 0xabcd0000);
-        assert_eq!(serialized_packet[2], 0x40016bd8);
-        assert_eq!(serialized_packet[3], 0xc0a89283);
-        assert_eq!(serialized_packet[4], 0x08080808);
-        assert_eq!(serialized_packet[5], 0x0800e5ca);
-        assert_eq!(serialized_packet[6], 0x12340001);
+        let serialized_packet = packet.serialize();
+        assert_eq!(correct_packet, serialized_packet);
     }
 }
