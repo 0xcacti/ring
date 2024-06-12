@@ -1,8 +1,4 @@
-use get_if_addrs::get_if_addrs;
-use std::{
-    net::{IpAddr, Ipv4Addr},
-    process,
-};
+use std::net::{IpAddr, Ipv4Addr};
 
 // TODO add encapsulation
 pub struct Header {

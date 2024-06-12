@@ -1,4 +1,5 @@
 use clap::{crate_version, Parser};
+use ring::{icmp, ip, socket};
 use std::{env, net::IpAddr};
 
 #[derive(Debug, Parser)]
@@ -15,8 +16,11 @@ async fn main() {
     match args.host.parse::<IpAddr>() {
         Ok(ip) => match ip {
             IpAddr::V4(ipv4) => {
-                println!("{} is a valid ip address", ipv4);
-                println!("Constructing a valid ICMP packet");
+                println!("PING {}", ipv4);
+                let source_ip = IpAddr::V4(ip::get_machine_ipv4().unwrap());
+                let destination_ip = IpAddr::V4(ipv4);
+                let packet = icmp::Packet::new_ipv4_echo_request(source_ip, destination_ip, 0x1234);
+                socket::send_ipv4_packet(packet, ipv4).unwrap();
             }
             IpAddr::V6(ipv6) => {
                 println!("{} is a valid ip address", ipv6);

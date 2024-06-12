@@ -1,3 +1,6 @@
+use get_if_addrs::get_if_addrs;
+use std::net::{IpAddr, Ipv4Addr};
+
 pub fn get_machine_ipv4() -> Option<Ipv4Addr> {
     match get_if_addrs() {
         Ok(if_addrs) => {
@@ -11,6 +14,5 @@ pub fn get_machine_ipv4() -> Option<Ipv4Addr> {
             return None;
         }
         Err(_) => panic!("Failed to get machine's IP address"), // TODO: should we panic here? or
-                                                                // set to localhost?
     }
 }
