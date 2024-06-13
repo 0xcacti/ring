@@ -9,8 +9,7 @@ struct App {
     host: String,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = App::parse();
 
     match args.host.parse::<IpAddr>() {
@@ -18,8 +17,12 @@ async fn main() {
             IpAddr::V4(ipv4) => {
                 println!("PING {}", ipv4);
                 let source_ip = IpAddr::V4(ip::get_machine_ipv4().unwrap());
+                println!("source ip: {}", source_ip);
                 let destination_ip = IpAddr::V4(ipv4);
                 let packet = icmp::Packet::new_ipv4_echo_request(source_ip, destination_ip, 0x1234);
+                println!("ip header checksum: {:X}", packet.header.checksum);
+                println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
+                println!("total packet length: {}", packet.header.length);
                 socket::send_ipv4_packet(packet, ipv4).unwrap();
             }
             IpAddr::V6(ipv6) => {
