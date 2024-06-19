@@ -8,3 +8,5 @@ flags.
 
 UGH wireshark says the packet is invalid or malformed.  I really can't 
 figure out what the fuck is going on here. 
+
+Adding IPV6 support
