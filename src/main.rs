@@ -15,7 +15,6 @@ fn main() {
     match args.host.parse::<IpAddr>() {
         Ok(ip) => match ip {
             IpAddr::V4(ipv4) => {
-                println!("PING {}", ipv4);
                 let source_ip = IpAddr::V4(ip::get_machine_ipv4().unwrap());
                 println!("source ip: {}", source_ip);
                 let destination_ip = IpAddr::V4(ipv4);
@@ -27,6 +26,14 @@ fn main() {
             }
             IpAddr::V6(ipv6) => {
                 println!("{} is a valid ip address", ipv6);
+                let source_ip = IpAddr::V6(ip::get_machine_ipv6().unwrap());
+                println!("source ip: {}", source_ip);
+                let destination_ip = IpAddr::V6(ipv6);
+                let packet = icmp::Packet::new_ipv6_echo_request(source_ip, destination_ip, 0xabcd);
+                println!("ip header checksum: {:X}", packet.header.checksum);
+                println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
+                println!("total packet length: {}", packet.header.length);
+                socket::send_ipv6_packet(packet, ipv6).unwrap();
             }
         },
         Err(_) => {
