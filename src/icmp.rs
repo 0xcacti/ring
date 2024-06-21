@@ -55,6 +55,10 @@ impl Packet {
         }
     }
 
+    pub fn new_ipv6_echo_request(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Packet {
+        unimplemented!();
+    }
+
     pub fn serialize_ipv4(&self) -> Vec<u8> {
         let mut packet = Vec::new();
         // TODO: add asserts

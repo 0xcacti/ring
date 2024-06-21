@@ -22,3 +22,7 @@ pub fn send_ipv4_packet(packet: Packet, destination: Ipv4Addr) -> std::io::Resul
 
     Ok(())
 }
+
+pub fn send_ipv6_packet(packet: Packet, destination: Ipv6Addr) -> std::io::Result<()> {
+    unimplemented!()
+}
