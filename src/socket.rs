@@ -5,7 +5,7 @@ use socket2::{Domain, Protocol, Socket, Type};
 use crate::icmp::Packet;
 
 pub fn send_ipv4_packet(packet: Packet, destination: Ipv4Addr) -> std::io::Result<()> {
-    let packet = packet.serialize();
+    let packet = packet.serialize_ipv4();
     for byte in packet.iter() {
         print!("{:X} ", byte);
     }

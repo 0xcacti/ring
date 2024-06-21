@@ -36,8 +36,6 @@ pub struct Packet {
 
 impl Packet {
     pub fn new_ipv4_echo_request(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Packet {
-        let icmp_id = rand::random::<u16>();
-
         let mut header = Header::new_ip_header(source_ip, destination_ip, id);
         header.compute_checksum();
 
@@ -57,7 +55,7 @@ impl Packet {
         }
     }
 
-    pub fn serialize(&self) -> Vec<u8> {
+    pub fn serialize_ipv4(&self) -> Vec<u8> {
         let mut packet = Vec::new();
         // TODO: add asserts
         packet.push(self.header.version << 4 | self.header.ihl);
@@ -199,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn it_serializes_packet() {
+    fn it_serializes_icp4_packet() {
         let source = IpAddr::V4(Ipv4Addr::new(192, 168, 146, 131));
         let destination = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let id = 0xabcd;
@@ -220,7 +218,7 @@ mod tests {
             })
             .collect();
 
-        let serialized_packet = packet.serialize();
+        let serialized_packet = packet.serialize_ipv4();
         assert_eq!(correct_packet, serialized_packet);
     }
 }
