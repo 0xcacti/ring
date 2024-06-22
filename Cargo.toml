@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.86"
 clap = { version = "4.4.6", features = ["derive", "cargo"] }
 get_if_addrs = "0.5.3"
 libc = "0.2.155"
