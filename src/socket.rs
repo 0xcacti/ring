@@ -16,8 +16,8 @@ pub fn send_ipv4_packet(
     println!();
 
     let socket = Socket::new(Domain::IPV4, Type::RAW, Some(Protocol::ICMPV4))?;
-    socket.set_header_included(true)?;
-    socket.bind(&SocketAddr::new(IpAddr::V4(source), 0).into())?;
+    socket.set_header_included(true).unwrap();
+    // socket.bind(&SocketAddr::new(IpAddr::V4(source), 0).into())?;
     // socket.set_nonblocking(true)?;
 
     let sockaddr = SocketAddr::new(IpAddr::V4(destination), 0);
