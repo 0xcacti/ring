@@ -14,10 +14,12 @@ struct App {
 
 fn main() {
     let args = App::parse();
+    let is_macos = std::env::consts::OS == "macos"; // Auto-detect macOS
 
     match args.host.parse::<IpAddr>() {
         Ok(ip) => match ip {
             IpAddr::V4(ipv4) => {
+
                 let ipv4_source = ip::get_machine_ipv4().unwrap();
                 println!("source ip: {}", ipv4_source);
                 let destination_ip = IpAddr::V4(ipv4);
@@ -26,6 +28,21 @@ fn main() {
                     destination_ip,
                     0x26f2,
                 );
+
+                let packet = match is_macos {
+                    true => {
+                        icmp::ICMPHeader::new_echo_request_header(id, seq_num)
+
+                    }
+                    false => {
+                        icmp::Packet::new_ipv4_echo_request(
+                            IpAddr::V4(ipv4_source),
+                            destination_ip,
+                            0x26f2,
+                            )
+
+                    }
+                }
                 println!("ip header checksum: {:X}", packet.header.checksum);
                 println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
                 println!("total packet length: {}", packet.header.length);
