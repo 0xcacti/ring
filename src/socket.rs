@@ -12,6 +12,7 @@ pub fn send_ipv4_packet(packet: Packet, destination: Ipv4Addr) -> std::io::Resul
     println!();
 
     let socket = Socket::new(Domain::IPV4, Type::RAW, Some(Protocol::ICMPV4))?;
+    socket.set_header_included(true)?;
     socket.set_nonblocking(true)?;
 
     let sockaddr = SocketAddr::new(IpAddr::V4(destination), 0);

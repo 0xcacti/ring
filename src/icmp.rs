@@ -61,7 +61,8 @@ impl Packet {
 
     pub fn serialize_ipv4(&self) -> Vec<u8> {
         let mut packet = Vec::new();
-        // TODO: add asserts
+
+        // IP Header
         packet.push(self.header.version << 4 | self.header.ihl);
         packet.push(self.header.tos);
         packet.extend_from_slice(&self.header.length.to_be_bytes());
@@ -74,15 +75,16 @@ impl Packet {
         packet.extend_from_slice(&self.header.checksum.to_be_bytes());
         packet.extend_from_slice(&self.header.source);
         packet.extend_from_slice(&self.header.destination);
+
         packet.push(self.icmp_header.msg_type);
         packet.push(self.icmp_header.code);
         packet.extend_from_slice(&self.icmp_header.checksum.to_be_bytes());
         packet.extend_from_slice(&self.icmp_header.id.to_be_bytes());
         packet.extend_from_slice(&self.icmp_header.seq_num.to_be_bytes());
 
-        if let Some(payload) = &self.icmp_payload {
-            packet.extend_from_slice(&payload.data);
-        }
+        // if let Some(payload) = &self.icmp_payload {
+        //     packet.extend_from_slice(&payload.data);
+        // }
 
         packet
     }
