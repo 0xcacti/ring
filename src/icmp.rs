@@ -28,10 +28,20 @@ pub struct ICMPPayload {
     pub data: [u8; 32], // TODO: determine maximum size
 }
 
-pub struct Packet {
+pub struct LinuxPacket {
     pub header: Header,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
+}
+
+pub struct MacOSPacket {
+    pub icmp_header: ICMPHeader,
+    pub icmp_payload: Option<ICMPPayload>,
+}
+
+pub enum Packet {
+    Linux(LinuxPacket),
+    MacOS(MacOSPacket),
 }
 
 impl Packet {

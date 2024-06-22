@@ -39,6 +39,7 @@ fn ring_from_macos(destination_ip: IpAddr) -> Result<()> {
             let source = IpAddr::V4(source_ip);
             let destination = IpAddr::V4(ipv4);
             let packet = icmp::Packet::new_ipv4_echo_request(source, destination, 0x26f2);
+            let icmp_packet = icmp::ICMPHeader::new_echo_request_header(
             println!("ip header checksum: {:X}", packet.header.checksum);
             println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
             println!("total packet length: {}", packet.header.length);
