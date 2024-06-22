@@ -19,6 +19,7 @@ fn main() {
                 println!("source ip: {}", source_ip);
                 let destination_ip = IpAddr::V4(ipv4);
                 let packet = icmp::Packet::new_ipv4_echo_request(source_ip, destination_ip, 0xabcd);
+                println!("my ip is: {}", source_ip);
                 println!("ip header checksum: {:X}", packet.header.checksum);
                 println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
                 println!("total packet length: {}", packet.header.length);
