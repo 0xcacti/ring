@@ -1,9 +1,6 @@
 use clap::{crate_version, Parser};
 use ring::{icmp, ip, socket};
-use std::{
-    env,
-    net::{IpAddr, Ipv4Addr},
-};
+use std::{env, net::IpAddr};
 
 use anyhow::Result;
 
@@ -19,41 +16,12 @@ fn main() {
     let is_macos = std::env::consts::OS == "macos"; // Auto-detect macOS
 
     match args.host.parse::<IpAddr>() {
-        Ok(ip) => match ip {
-            IpAddr::V4(ipv4) => {
-                let ipv4_source = ip::get_machine_ipv4().unwrap();
-                println!("source ip: {}", ipv4_source);
-                let destination_ip = IpAddr::V4(ipv4);
-                let packet = icmp::Packet::new_ipv4_echo_request(
-                    IpAddr::V4(ipv4_source),
-                    destination_ip,
-                    0x26f2,
-                );
-
-                match is_macos {
-                    true => {
-                        icmp::ICMPHeader::new_echo_request_header(id, seq_num);
-                        ring_from_macos().unwrap();
-                    }
-                    false => {
-                        ring_from_linux().unwrap();
-                    }
-                }
-                println!("ip header checksum: {:X}", packet.header.checksum);
-                println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
-                println!("total packet length: {}", packet.header.length);
-                socket::send_ipv4_packet(packet, ipv4_source, ipv4).unwrap();
+        Ok(destination_ip) => match is_macos {
+            true => {
+                ring_from_macos(destination_ip).unwrap();
             }
-            IpAddr::V6(ipv6) => {
-                println!("{} is a valid ip address", ipv6);
-                let source_ip = IpAddr::V6(ip::get_machine_ipv6().unwrap());
-                println!("source ip: {}", source_ip);
-                let destination_ip = IpAddr::V6(ipv6);
-                let packet = icmp::Packet::new_ipv6_echo_request(source_ip, destination_ip, 0xabcd);
-                println!("ip header checksum: {:X}", packet.header.checksum);
-                println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
-                println!("total packet length: {}", packet.header.length);
-                socket::send_ipv6_packet(packet, ipv6).unwrap();
+            false => {
+                ring_from_linux(destination_ip).unwrap();
             }
         },
         Err(_) => {
@@ -63,42 +31,36 @@ fn main() {
     }
 }
 
-fn ring_from_macos(source_ip: IpAddr, destination_ip: IpAddr) -> Result<()> {
+fn ring_from_macos(destination_ip: IpAddr) -> Result<()> {
     match destination_ip {
         IpAddr::V4(ipv4) => {
-            let ipv4_source = ip::get_machine_ipv4().unwrap();
-            println!("source ip: {}", ipv4_source);
-            let destination_ip = IpAddr::V4(ipv4);
-            let packet = icmp::Packet::new_ipv4_echo_request(
-                IpAddr::V4(ipv4_source),
-                destination_ip,
-                0x26f2,
-            );
+            let source_ip = ip::get_machine_ipv4().unwrap();
+            println!("source ip: {}", source_ip);
+            let source = IpAddr::V4(source_ip);
+            let destination = IpAddr::V4(ipv4);
+            let packet = icmp::Packet::new_ipv4_echo_request(source, destination, 0x26f2);
             println!("ip header checksum: {:X}", packet.header.checksum);
             println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
             println!("total packet length: {}", packet.header.length);
-            socket::send_ipv4_packet(packet, ipv4_source, ipv4).unwrap();
+            socket::send_ipv4_packet(packet, destination).unwrap();
         }
         IpAddr::V6(ipv6) => {}
     }
     Ok(())
 }
 
-fn ring_from_linux(source_ip: IpAddr, destination_ip: IpAddr) -> Result<()> {
+fn ring_from_linux(destination_ip: IpAddr) -> Result<()> {
     match destination_ip {
         IpAddr::V4(ipv4) => {
-            let ipv4_source = ip::get_machine_ipv4().unwrap();
-            println!("source ip: {}", ipv4_source);
-            let destination_ip = IpAddr::V4(ipv4);
-            let packet = icmp::Packet::new_ipv4_echo_request(
-                IpAddr::V4(ipv4_source),
-                destination_ip,
-                0x26f2,
-            );
+            let source_ip = ip::get_machine_ipv4().unwrap();
+            println!("source ip: {}", source_ip);
+            let source = IpAddr::V4(source_ip);
+            let destination = IpAddr::V4(ipv4);
+            let packet = icmp::Packet::new_ipv4_echo_request(source, destination, 0x26f2);
             println!("ip header checksum: {:X}", packet.header.checksum);
             println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
             println!("total packet length: {}", packet.header.length);
-            socket::send_ipv4_packet(packet, ipv4_source, ipv4).unwrap();
+            socket::send_ipv4_packet(packet, destination).unwrap();
         }
         IpAddr::V6(ipv6) => {}
     }
