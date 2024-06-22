@@ -43,7 +43,7 @@ impl Packet {
             msg_type: 8, // echo request
             code: 0,
             checksum: 0,
-            id: 0x1234,
+            id: 1234,
             seq_num: 1,
         };
         icmp_header.compute_icmp_checksum();
@@ -110,7 +110,7 @@ impl Header {
             tos: 0,
             // len(Header) + len(ICMPHeader) + 0 (no payload)
             //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
-            length: 28, // verify length
+            length: 28,
             id,
             flags: 0,
             fragment_offset: 0,
