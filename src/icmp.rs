@@ -45,23 +45,41 @@ pub enum Packet {
 }
 
 impl Packet {
-    pub fn new_ipv4_echo_request(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Packet {
-        let mut header = Header::new_ip_header(source_ip, destination_ip, id);
-        header.compute_checksum();
-
-        let mut icmp_header = ICMPHeader {
-            msg_type: 8, // echo request
-            code: 0,
-            checksum: 0,
-            id: 1234,
-            seq_num: 1,
-        };
-        icmp_header.compute_icmp_checksum();
-
-        Packet {
-            header,
-            icmp_header,
-            icmp_payload: None,
+    pub fn new_ipv4_echo_request(
+        is_macos: bool,
+        source_ip: IpAddr,
+        destination_ip: IpAddr,
+        id: u16,
+    ) -> Packet {
+        if is_macos {
+            let mut icmp_header = ICMPHeader {
+                msg_type: 8, // echo request
+                code: 0,
+                checksum: 0,
+                id: 1234,
+                seq_num: 1,
+            };
+            icmp_header.compute_icmp_checksum();
+            Packet::MacOS(MacOSPacket {
+                icmp_header,
+                icmp_payload: None,
+            })
+        } else {
+            let mut header = Header::new_ip_header(source_ip, destination_ip, id);
+            header.compute_checksum();
+            let mut icmp_header = ICMPHeader {
+                msg_type: 8, // echo request
+                code: 0,
+                checksum: 0,
+                id: 1234,
+                seq_num: 1,
+            };
+            icmp_header.compute_icmp_checksum();
+            Packet::Linux(LinuxPacket {
+                header,
+                icmp_header,
+                icmp_payload: None,
+            })
         }
     }
 
@@ -70,33 +88,48 @@ impl Packet {
     }
 
     pub fn serialize_ipv4(&self) -> Vec<u8> {
-        let mut packet = Vec::new();
+        let mut serialized_packet = Vec::new();
+        match self {
+            Packet::Linux(packet) => {
+                serialized_packet.push(packet.header.version << 4 | packet.header.ihl);
+                serialized_packet.push(packet.header.tos);
+                serialized_packet.extend_from_slice(&packet.header.length.to_be_bytes());
+                serialized_packet.extend_from_slice(&packet.header.id.to_be_bytes());
+                serialized_packet.extend_from_slice(
+                    &(((packet.header.flags as u16) << 13) | packet.header.fragment_offset)
+                        .to_be_bytes(),
+                );
+                serialized_packet.push(packet.header.ttl);
+                serialized_packet.push(packet.header.protocol);
+                serialized_packet.extend_from_slice(&packet.header.checksum.to_be_bytes());
+                serialized_packet.extend_from_slice(&packet.header.source);
+                serialized_packet.extend_from_slice(&packet.header.destination);
 
-        // IP Header
-        packet.push(self.header.version << 4 | self.header.ihl);
-        packet.push(self.header.tos);
-        packet.extend_from_slice(&self.header.length.to_be_bytes());
-        packet.extend_from_slice(&self.header.id.to_be_bytes());
-        packet.extend_from_slice(
-            &(((self.header.flags as u16) << 13) | self.header.fragment_offset).to_be_bytes(),
-        );
-        packet.push(self.header.ttl);
-        packet.push(self.header.protocol);
-        packet.extend_from_slice(&self.header.checksum.to_be_bytes());
-        packet.extend_from_slice(&self.header.source);
-        packet.extend_from_slice(&self.header.destination);
+                serialized_packet.push(packet.icmp_header.msg_type);
+                serialized_packet.push(packet.icmp_header.code);
+                serialized_packet.extend_from_slice(&packet.icmp_header.checksum.to_be_bytes());
+                serialized_packet.extend_from_slice(&packet.icmp_header.id.to_be_bytes());
+                serialized_packet.extend_from_slice(&packet.icmp_header.seq_num.to_be_bytes());
 
-        packet.push(self.icmp_header.msg_type);
-        packet.push(self.icmp_header.code);
-        packet.extend_from_slice(&self.icmp_header.checksum.to_be_bytes());
-        packet.extend_from_slice(&self.icmp_header.id.to_be_bytes());
-        packet.extend_from_slice(&self.icmp_header.seq_num.to_be_bytes());
+                // if let Some(payload) = &self.icmp_payload {
+                //     packet.extend_from_slice(&payload.data);
+                // }
 
-        // if let Some(payload) = &self.icmp_payload {
-        //     packet.extend_from_slice(&payload.data);
-        // }
+                serialized_packet
+            }
+            Packet::MacOS(packet) => {
+                serialized_packet.push(packet.icmp_header.msg_type);
+                serialized_packet.push(packet.icmp_header.code);
+                serialized_packet.extend_from_slice(&packet.icmp_header.checksum.to_be_bytes());
+                serialized_packet.extend_from_slice(&packet.icmp_header.id.to_be_bytes());
+                serialized_packet.extend_from_slice(&packet.icmp_header.seq_num.to_be_bytes());
+                // if let Some(payload) = &self.icmp_payload {
+                //     packet.extend_from_slice(&payload.data);
+                // }
 
-        packet
+                serialized_packet
+            }
+        }
     }
 }
 
@@ -217,12 +250,17 @@ mod tests {
         let source = IpAddr::V4(Ipv4Addr::new(192, 168, 146, 131));
         let destination = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let id = 0xabcd;
-        let mut packet = Packet::new_ipv4_echo_request(source, destination, id);
+        let mut packet = Packet::new_ipv4_echo_request(false, source, destination, id);
 
-        // override defaults
-        packet.icmp_header.id = 0x1234;
-        packet.icmp_header.seq_num = 0x001;
-        packet.icmp_header.compute_icmp_checksum();
+        match packet {
+            Packet::Linux(ref mut packet_data) => {
+                // override defaults
+                packet_data.icmp_header.id = 0x1234;
+                packet_data.icmp_header.seq_num = 0x001;
+                packet_data.icmp_header.compute_icmp_checksum();
+            }
+            _ => panic!("Expected Linux packet"),
+        }
 
         let correct_packet_str = "4500001cabcd000040016bd8c0a89283080808080800e5ca12340001";
         let correct_packet: Vec<u8> = correct_packet_str
