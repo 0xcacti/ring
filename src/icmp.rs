@@ -1,7 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr};
 
 // TODO add encapsulation
-pub struct Header {
+pub struct HeaderIPV4 {
     pub version: u8,
     pub ihl: u8,     // internet header length - in 32-bit words
     pub tos: u8,     // type of service
@@ -16,7 +16,7 @@ pub struct Header {
     pub destination: [u8; 4],
 }
 
-pub struct ICMPHeader {
+pub struct ICMPHeaderIPV4 {
     pub msg_type: u8,
     pub code: u8,
     pub checksum: u16,
@@ -28,13 +28,19 @@ pub struct ICMPPayload {
     pub data: [u8; 32], // TODO: determine maximum size
 }
 
-pub struct Packet {
+pub struct IPV4Packet {
     pub header: Option<Header>,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
 }
 
-impl Packet {
+pub struct IPV6Packet {
+    pub header: Option<Header>,
+    pub icmp_header: ICMPHeader,
+    pub icmp_payload: Option<ICMPPayload>,
+}
+
+impl IPV4Packet {
     pub fn new_ipv4_echo_request(
         is_macos: bool,
         source_ip: IpAddr,
@@ -74,10 +80,6 @@ impl Packet {
         }
     }
 
-    pub fn new_ipv6_echo_request(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Packet {
-        unimplemented!();
-    }
-
     pub fn serialize_ipv4(&self) -> Vec<u8> {
         let mut serialized_packet = Vec::new();
         if let Some(ref header) = self.header {
@@ -109,7 +111,7 @@ impl Packet {
     }
 }
 
-impl Header {
+impl HeaderIPV4 {
     fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Header {
         // let process_id = process::id() as u16;
 
@@ -166,7 +168,7 @@ impl Header {
     }
 }
 
-impl ICMPHeader {
+impl ICMPHeaderIPV4 {
     pub fn new_echo_request_header(id: u16, seq_num: u16) -> ICMPHeader {
         ICMPHeader {
             msg_type: 8,

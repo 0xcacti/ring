@@ -6,7 +6,23 @@ how to both construct and interpret different types of ICMP requests.
 I aim to have full feature parity with the default ping, including all 
 flags.
 
-UGH wireshark says the packet is invalid or malformed.  I really can't 
-figure out what the fuck is going on here. 
 
-Adding IPV6 support
+TODO: 
+
+
+- [ ] Finish refactor to have IPV4 and IPV6 types
+
+- [ ] Add ipv6 support
+    - [ ] Add ipv6 header generation and serialization
+    - [ ] Add ipv6 icmp header generation and serialization
+    - [ ] Add socket support for ipv6 
+
+- [ ] Echo resoponse parsing 
+    - [ ] Create echo response type 
+    - [ ] Deserialize echo response into type
+    
+- [ ] Add payloads
+- [ ] Format output to make it look nice 
+- [ ] Collect ping statistics
+- [ ] Make packet generation more customizable - sequence number etc
+- [ ] Add encapsulation

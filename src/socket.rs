@@ -24,11 +24,9 @@ pub fn send_and_receive_ipv4_packet(packet: Packet, destination: IpAddr) -> std:
 
     let socket = Socket::new(Domain::IPV4, Type::RAW, Some(Protocol::ICMPV4))?;
     socket.set_nonblocking(true)?;
-    match packet {
-        Packet::Linux(_) => {
-            socket.set_header_included(true).unwrap();
-        }
-        Packet::MacOS(_) => {}
+
+    if packet.header.is_some() {
+        socket.set_header_included(true).unwrap();
     }
 
     let sockaddr = SocketAddr::new(destination, 0);

@@ -16,47 +16,25 @@ fn main() {
     let is_macos = std::env::consts::OS == "macos"; // Auto-detect macOS
 
     match args.host.parse::<IpAddr>() {
-        Ok(destination_ip) => match is_macos {
-            true => {
-                ring_from_macos(destination_ip).unwrap();
+        Ok(destination_ip) => match destination_ip {
+            IpAddr::V4(ipv4) => {
+                let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
+                println!("source ip: {}", source_ip);
+                let source = IpAddr::V4(source_ip);
+                let destination = IpAddr::V4(ipv4);
+                let packet = if is_macos {
+                    icmp::Packet::new_ipv4_echo_request(true, source, destination, 0x26f2)
+                } else {
+                    icmp::Packet::new_ipv4_echo_request(false, source, destination, 0x26f2)
+                };
+
+                socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
             }
-            false => {
-                ring_from_linux(destination_ip).unwrap();
-            }
+            IpAddr::V6(ipv6) => {}
         },
         Err(_) => {
             eprintln!("{} is not a valid ip address", args.host);
             std::process::exit(1);
         }
     }
-}
-
-fn ring_from_macos(destination_ip: IpAddr) -> Result<()> {
-    match destination_ip {
-        IpAddr::V4(ipv4) => {
-            let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
-            println!("source ip: {}", source_ip);
-            let source = IpAddr::V4(source_ip);
-            let destination = IpAddr::V4(ipv4);
-            let packet = icmp::Packet::new_ipv4_echo_request(true, source, destination, 0x26f2);
-            socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
-        }
-        IpAddr::V6(ipv6) => {}
-    }
-    Ok(())
-}
-
-fn ring_from_linux(destination_ip: IpAddr) -> Result<()> {
-    match destination_ip {
-        IpAddr::V4(ipv4) => {
-            let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
-            println!("source ip: {}", source_ip);
-            let source = IpAddr::V4(source_ip);
-            let destination = IpAddr::V4(ipv4);
-            let packet = icmp::Packet::new_ipv4_echo_request(false, source, destination, 0x26f2);
-            socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
-        }
-        IpAddr::V6(ipv6) => {}
-    }
-    Ok(())
 }
