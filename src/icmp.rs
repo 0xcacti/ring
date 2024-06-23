@@ -28,20 +28,10 @@ pub struct ICMPPayload {
     pub data: [u8; 32], // TODO: determine maximum size
 }
 
-pub struct LinuxPacket {
-    pub header: Header,
+pub struct Packet {
+    pub header: Option<Header>,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
-}
-
-pub struct MacOSPacket {
-    pub icmp_header: ICMPHeader,
-    pub icmp_payload: Option<ICMPPayload>,
-}
-
-pub enum Packet {
-    Linux(LinuxPacket),
-    MacOS(MacOSPacket),
 }
 
 impl Packet {
@@ -60,10 +50,11 @@ impl Packet {
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
-            Packet::MacOS(MacOSPacket {
+            Packet {
+                header: None,
                 icmp_header,
                 icmp_payload: None,
-            })
+            }
         } else {
             let mut header = Header::new_ip_header(source_ip, destination_ip, id);
             header.compute_checksum();
@@ -75,11 +66,11 @@ impl Packet {
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
-            Packet::Linux(LinuxPacket {
-                header,
+            Packet {
+                header: Some(header),
                 icmp_header,
                 icmp_payload: None,
-            })
+            }
         }
     }
 
@@ -89,47 +80,32 @@ impl Packet {
 
     pub fn serialize_ipv4(&self) -> Vec<u8> {
         let mut serialized_packet = Vec::new();
-        match self {
-            Packet::Linux(packet) => {
-                serialized_packet.push(packet.header.version << 4 | packet.header.ihl);
-                serialized_packet.push(packet.header.tos);
-                serialized_packet.extend_from_slice(&packet.header.length.to_be_bytes());
-                serialized_packet.extend_from_slice(&packet.header.id.to_be_bytes());
-                serialized_packet.extend_from_slice(
-                    &(((packet.header.flags as u16) << 13) | packet.header.fragment_offset)
-                        .to_be_bytes(),
-                );
-                serialized_packet.push(packet.header.ttl);
-                serialized_packet.push(packet.header.protocol);
-                serialized_packet.extend_from_slice(&packet.header.checksum.to_be_bytes());
-                serialized_packet.extend_from_slice(&packet.header.source);
-                serialized_packet.extend_from_slice(&packet.header.destination);
-
-                serialized_packet.push(packet.icmp_header.msg_type);
-                serialized_packet.push(packet.icmp_header.code);
-                serialized_packet.extend_from_slice(&packet.icmp_header.checksum.to_be_bytes());
-                serialized_packet.extend_from_slice(&packet.icmp_header.id.to_be_bytes());
-                serialized_packet.extend_from_slice(&packet.icmp_header.seq_num.to_be_bytes());
-
-                // if let Some(payload) = &self.icmp_payload {
-                //     packet.extend_from_slice(&payload.data);
-                // }
-
-                serialized_packet
-            }
-            Packet::MacOS(packet) => {
-                serialized_packet.push(packet.icmp_header.msg_type);
-                serialized_packet.push(packet.icmp_header.code);
-                serialized_packet.extend_from_slice(&packet.icmp_header.checksum.to_be_bytes());
-                serialized_packet.extend_from_slice(&packet.icmp_header.id.to_be_bytes());
-                serialized_packet.extend_from_slice(&packet.icmp_header.seq_num.to_be_bytes());
-                // if let Some(payload) = &self.icmp_payload {
-                //     packet.extend_from_slice(&payload.data);
-                // }
-
-                serialized_packet
-            }
+        if let Some(ref header) = self.header {
+            serialized_packet.push(header.version << 4 | header.ihl);
+            serialized_packet.push(header.tos);
+            serialized_packet.extend_from_slice(&header.length.to_be_bytes());
+            serialized_packet.extend_from_slice(&header.id.to_be_bytes());
+            serialized_packet.extend_from_slice(
+                &(((header.flags as u16) << 13) | header.fragment_offset).to_be_bytes(),
+            );
+            serialized_packet.push(header.ttl);
+            serialized_packet.push(header.protocol);
+            serialized_packet.extend_from_slice(&header.checksum.to_be_bytes());
+            serialized_packet.extend_from_slice(&header.source);
+            serialized_packet.extend_from_slice(&header.destination);
         }
+
+        serialized_packet.push(self.icmp_header.msg_type);
+        serialized_packet.push(self.icmp_header.code);
+        serialized_packet.extend_from_slice(&self.icmp_header.checksum.to_be_bytes());
+        serialized_packet.extend_from_slice(&self.icmp_header.id.to_be_bytes());
+        serialized_packet.extend_from_slice(&self.icmp_header.seq_num.to_be_bytes());
+
+        if let Some(payload) = &self.icmp_payload {
+            serialized_packet.extend_from_slice(&payload.data);
+        }
+
+        serialized_packet
     }
 }
 
