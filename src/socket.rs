@@ -12,18 +12,23 @@ pub fn send_ipv4_packet(packet: Packet, destination: IpAddr) -> std::io::Result<
         _ => {}
     }
 
-    let packet = packet.serialize_ipv4();
-    for byte in packet.iter() {
+    let serialized_packet = packet.serialize_ipv4();
+    for byte in serialized_packet.iter() {
         print!("{:X} ", byte);
     }
     println!();
 
     let socket = Socket::new(Domain::IPV4, Type::RAW, Some(Protocol::ICMPV4))?;
-    socket.set_header_included(true).unwrap();
     socket.set_nonblocking(true)?;
+    match packet {
+        Packet::Linux(_) => {
+            socket.set_header_included(true).unwrap();
+        }
+        Packet::MacOS(_) => {}
+    }
 
     let sockaddr = SocketAddr::new(destination, 0);
-    match socket.send_to(&packet, &sockaddr.into()) {
+    match socket.send_to(&serialized_packet, &sockaddr.into()) {
         Ok(bytes_sent) => println!("Sent {} bytes", bytes_sent),
         Err(e) => println!("Failed to send packet: {:?}", e),
     }
