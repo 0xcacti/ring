@@ -34,16 +34,12 @@ fn main() {
 fn ring_from_macos(destination_ip: IpAddr) -> Result<()> {
     match destination_ip {
         IpAddr::V4(ipv4) => {
-            let source_ip = ip::get_machine_ipv4().unwrap();
+            let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
             println!("source ip: {}", source_ip);
             let source = IpAddr::V4(source_ip);
             let destination = IpAddr::V4(ipv4);
             let packet = icmp::Packet::new_ipv4_echo_request(true, source, destination, 0x26f2);
-            // let icmp_packet = icmp::ICMPHeader::new_echo_request_header(
-            // println!("ip header checksum: {:X}", packet.header.checksum);
-            // println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
-            // println!("total packet length: {}", packet.header.length);
-            socket::send_ipv4_packet(packet, destination).unwrap();
+            socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
         }
         IpAddr::V6(ipv6) => {}
     }
@@ -53,15 +49,12 @@ fn ring_from_macos(destination_ip: IpAddr) -> Result<()> {
 fn ring_from_linux(destination_ip: IpAddr) -> Result<()> {
     match destination_ip {
         IpAddr::V4(ipv4) => {
-            let source_ip = ip::get_machine_ipv4().unwrap();
+            let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
             println!("source ip: {}", source_ip);
             let source = IpAddr::V4(source_ip);
             let destination = IpAddr::V4(ipv4);
             let packet = icmp::Packet::new_ipv4_echo_request(false, source, destination, 0x26f2);
-            // println!("ip header checksum: {:X}", packet.header.checksum);
-            // println!("icmp header checksum: {:X}", packet.icmp_header.checksum);
-            // println!("total packet length: {}", packet.header.length);
-            socket::send_ipv4_packet(packet, destination).unwrap();
+            socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
         }
         IpAddr::V6(ipv6) => {}
     }
