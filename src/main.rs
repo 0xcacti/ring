@@ -30,7 +30,19 @@ fn main() {
 
                 socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
             }
-            IpAddr::V6(ipv6) => {}
+            IpAddr::V6(ipv6) => {
+                let source_ip = ip::get_machine_ipv6(ipv6).unwrap();
+                println!("source ip: {}", source_ip);
+                let source = IpAddr::V6(source_ip);
+                let destination = IpAddr::V6(ipv6);
+                let packet = if is_macos {
+                    icmp::Packet::new_ipv4_echo_request(true, source, destination, 0x26f2)
+                } else {
+                    icmp::Packet::new_ipv4_echo_request(false, source, destination, 0x26f2)
+                };
+
+                socket::send_and_receive_ipv6_packet(packet, destination).unwrap();
+            }
         },
         Err(_) => {
             eprintln!("{} is not a valid ip address", args.host);
