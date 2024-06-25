@@ -21,6 +21,7 @@ pub fn get_machine_ipv4(destination: Ipv4Addr) -> Option<Ipv4Addr> {
     }
 }
 
+// TODO: learn how freaking IPv6 works
 pub fn get_machine_ipv6(destination: Ipv6Addr) -> Option<Ipv6Addr> {
     if destination.is_loopback() {
         return Some(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1));
