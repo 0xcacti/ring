@@ -16,7 +16,18 @@ pub struct HeaderIPV4 {
     pub destination: [u8; 4],
 }
 
-pub struct ICMPHeaderIPV4 {
+pub struct HeaderIPV6 {
+    pub version: u8,       // 4 bits
+    pub traffic_class: u8, // 8 bits
+    pub flow_label: u32,   // 20 bits
+    pub payload_length: u16,
+    pub next_header: u8,
+    pub hop_limit: u8,
+    pub source: [u8; 16],
+    pub destination: [u8; 16],
+}
+
+pub struct ICMPHeader {
     pub msg_type: u8,
     pub code: u8,
     pub checksum: u16,
@@ -29,24 +40,24 @@ pub struct ICMPPayload {
 }
 
 pub struct IPV4Packet {
-    pub header: Option<Header>,
+    pub header: Option<HeaderIPV4>,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
 }
 
 pub struct IPV6Packet {
-    pub header: Option<Header>,
+    pub header: Option<HeaderIPV6>,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
 }
 
 impl IPV4Packet {
-    pub fn new_ipv4_echo_request(
+    pub fn new_echo_request(
         is_macos: bool,
         source_ip: IpAddr,
         destination_ip: IpAddr,
         id: u16,
-    ) -> Packet {
+    ) -> IPV4Packet {
         if is_macos {
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
@@ -56,13 +67,13 @@ impl IPV4Packet {
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
-            Packet {
+            IPV4Packet {
                 header: None,
                 icmp_header,
                 icmp_payload: None,
             }
         } else {
-            let mut header = Header::new_ip_header(source_ip, destination_ip, id);
+            let mut header = HeaderIPV4::new_ip_header(source_ip, destination_ip, id);
             header.compute_checksum();
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
@@ -72,7 +83,7 @@ impl IPV4Packet {
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
-            Packet {
+            IPV4Packet {
                 header: Some(header),
                 icmp_header,
                 icmp_payload: None,
@@ -80,7 +91,7 @@ impl IPV4Packet {
         }
     }
 
-    pub fn serialize_ipv4(&self) -> Vec<u8> {
+    pub fn serialize(&self) -> Vec<u8> {
         let mut serialized_packet = Vec::new();
         if let Some(ref header) = self.header {
             serialized_packet.push(header.version << 4 | header.ihl);
@@ -111,8 +122,85 @@ impl IPV4Packet {
     }
 }
 
+impl IPV6Packet {
+    pub fn new_echo_request(
+        is_macos: bool,
+        source_ip: IpAddr,
+        destination_ip: IpAddr,
+    ) -> IPV6Packet {
+        if is_macos {
+            let mut icmp_header = ICMPHeader {
+                msg_type: 128, // echo request
+                code: 0,
+                checksum: 0,
+                id: 1234,
+                seq_num: 1,
+            };
+            icmp_header.compute_icmp_checksum();
+            IPV6Packet {
+                header: None,
+                icmp_header,
+                icmp_payload: None,
+            }
+        } else {
+            let header = HeaderIPV6::new_ip_header(source_ip, destination_ip);
+            let mut icmp_header = ICMPHeader {
+                msg_type: 128, // echo request
+                code: 0,
+                checksum: 0,
+                id: 1234,
+                seq_num: 1,
+            };
+            icmp_header.compute_icmp_checksum();
+            IPV6Packet {
+                header: Some(header),
+                icmp_header,
+                icmp_payload: None,
+            }
+        }
+    }
+
+    // pub struct HeaderIPV6 {
+    //     pub version: u8,       // 4 bits
+    //     pub traffic_class: u8, // 8 bits
+    //     pub flow_label: u32,   // 20 bits
+    //     pub payload_length: u16,
+    //     pub next_header: u8,
+    //     pub hop_limit: u8,
+    //     pub source: [u8; 16],
+    //     pub destination: [u8; 16],
+    // }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut serialized_packet = Vec::new();
+        if let Some(ref header) = self.header {
+            let version_tc_fl = ((header.version as u32) << 28)
+                | ((header.traffic_class as u32) << 20)
+                | (header.flow_label & 0x000FFFFF); // Mask to ensure only 20 bits
+            serialized_packet.extend_from_slice(&version_tc_fl.to_be_bytes());
+            serialized_packet.extend_from_slice(&header.payload_length.to_be_bytes());
+            serialized_packet.push(header.next_header);
+            serialized_packet.push(header.hop_limit);
+            serialized_packet.extend_from_slice(&header.source);
+            serialized_packet.extend_from_slice(&header.destination);
+        }
+
+        serialized_packet.push(self.icmp_header.msg_type);
+        serialized_packet.push(self.icmp_header.code);
+        serialized_packet.extend_from_slice(&self.icmp_header.checksum.to_be_bytes());
+        serialized_packet.extend_from_slice(&self.icmp_header.id.to_be_bytes());
+        serialized_packet.extend_from_slice(&self.icmp_header.seq_num.to_be_bytes());
+
+        if let Some(payload) = &self.icmp_payload {
+            serialized_packet.extend_from_slice(&payload.data);
+        }
+
+        serialized_packet
+    }
+}
+
 impl HeaderIPV4 {
-    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> Header {
+    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> HeaderIPV4 {
         // let process_id = process::id() as u16;
 
         let source = match source_ip {
@@ -125,7 +213,7 @@ impl HeaderIPV4 {
             _ => panic!("Only IPv4 is supported"),
         };
 
-        Header {
+        HeaderIPV4 {
             version: 4,
             ihl: 5,
             tos: 0,
@@ -168,10 +256,35 @@ impl HeaderIPV4 {
     }
 }
 
-impl ICMPHeaderIPV4 {
-    pub fn new_echo_request_header(id: u16, seq_num: u16) -> ICMPHeader {
+impl HeaderIPV6 {
+    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr) -> HeaderIPV6 {
+        let source = match source_ip {
+            IpAddr::V6(addr) => addr.octets(),
+            _ => panic!("Only IPv6 is supported"),
+        };
+
+        let destination = match destination_ip {
+            IpAddr::V6(addr) => addr.octets(),
+            _ => panic!("Only IPv6 is supported"),
+        };
+
+        HeaderIPV6 {
+            version: 6,
+            traffic_class: 0, // set to 0
+            flow_label: 0,    // defaults to 0
+            payload_length: 8,
+            next_header: 58,
+            hop_limit: 64, // normal value
+            source,
+            destination,
+        }
+    }
+}
+
+impl ICMPHeader {
+    pub fn new_echo_request_header(msg_type: u8, id: u16, seq_num: u16) -> ICMPHeader {
         ICMPHeader {
-            msg_type: 8,
+            msg_type,
             code: 0,
             checksum: 0,
             id,
@@ -193,10 +306,13 @@ mod tests {
 
     #[test]
     fn it_computes_icmp_checksum() {
-        let mut icmp_header = ICMPHeader::new_echo_request_header(0x1234, 0x001);
+        // ipv4
+        let mut icmp_header = ICMPHeader::new_echo_request_header(8, 0x1234, 0x001);
         icmp_header.compute_icmp_checksum();
         print!("{:X}", icmp_header.checksum);
         assert_eq!(icmp_header.checksum, 0xE5CA);
+
+        // ipv6
     }
 
     #[test]
@@ -228,7 +344,7 @@ mod tests {
         let source = IpAddr::V4(Ipv4Addr::new(192, 168, 146, 131));
         let destination = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let id = 0xabcd;
-        let mut packet = Packet::new_ipv4_echo_request(false, source, destination, id);
+        let mut packet = IPV4Packet::new_echo_request(false, source, destination, id);
 
         match packet {
             Packet::Linux(ref mut packet_data) => {
@@ -250,7 +366,7 @@ mod tests {
             })
             .collect();
 
-        let serialized_packet = packet.serialize_ipv4();
+        let serialized_packet = packet.serialize();
         assert_eq!(correct_packet, serialized_packet);
     }
 }
