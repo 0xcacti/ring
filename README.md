@@ -22,7 +22,10 @@ TODO:
     - [ ] Deserialize echo response into type
     
 - [ ] Add payloads
-- [ ] Format output to make it look nice 
+- [ ] Formating 
+    - [ ] Decide what should be included in the output 
+    - [ ] Add coloration 
+    - [ ] See if you can add coloration to clap
 - [ ] Collect ping statistics
 - [ ] Make packet generation more customizable - sequence number etc
 - [ ] Add encapsulation
