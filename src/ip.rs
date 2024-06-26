@@ -56,7 +56,7 @@ pub fn get_machine_ipv6(destination: Ipv6Addr) -> Option<Ipv6Addr> {
 }
 
 fn is_suitable_ipv6(addr: &Ipv6Addr) -> bool {
-    !addr.is_loopback() && !is_link_local(addr) && !addr.is_unspecified()
+    !addr.is_loopback() && !addr.is_unspecified()
 }
 
 fn is_link_local(addr: &Ipv6Addr) -> bool {
