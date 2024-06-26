@@ -30,19 +30,23 @@ fn main() {
 
                 socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
             }
-            IpAddr::V6(ipv6) => {
-                let source_ip = ip::get_machine_ipv6(ipv6).unwrap();
-                println!("source ip: {}", source_ip);
-                let source = IpAddr::V6(source_ip);
-                let destination = IpAddr::V6(ipv6);
-                let packet = if is_macos {
-                    icmp::IPV6Packet::new_echo_request(true, source, destination)
-                } else {
-                    icmp::IPV6Packet::new_echo_request(false, source, destination)
-                };
-
-                socket::send_and_receive_ipv6_packet(packet, destination).unwrap();
-            }
+            IpAddr::V6(ipv6) => match ip::get_machine_ipv6(ipv6) {
+                Some(source_ip) => {
+                    println!("source ip: {}", source_ip);
+                    let source = IpAddr::V6(source_ip);
+                    let destination = IpAddr::V6(ipv6);
+                    let packet = if is_macos {
+                        icmp::IPV6Packet::new_echo_request(true, source, destination)
+                    } else {
+                        icmp::IPV6Packet::new_echo_request(false, source, destination)
+                    };
+                    socket::send_and_receive_ipv6_packet(packet, destination).unwrap();
+                }
+                None => {
+                    eprintln!("Couldn't find a suitable IPv6 address. Please check your network configuration.");
+                    std::process::exit(1);
+                }
+            },
         },
         Err(_) => {
             eprintln!("{} is not a valid ip address", args.host);

@@ -27,22 +27,32 @@ pub fn get_machine_ipv6(destination: Ipv6Addr) -> Option<Ipv6Addr> {
     if destination.is_loopback() {
         return Some(Ipv6Addr::LOCALHOST);
     }
-    get_if_addrs().ok().and_then(|if_addrs| {
-        if_addrs
-            .into_iter()
-            .filter_map(|if_addr| {
+
+    match get_if_addrs() {
+        Ok(if_addrs) => {
+            let mut suitable_addr = None;
+            for if_addr in if_addrs {
                 if let IpAddr::V6(ipv6_addr) = if_addr.addr.ip() {
-                    if is_suitable_ipv6(&ipv6_addr) {
-                        Some(ipv6_addr)
-                    } else {
-                        None
+                    let suitable = is_suitable_ipv6(&ipv6_addr);
+                    println!(
+                        "Interface: {}, IPv6: {}, Suitable: {}",
+                        if_addr.name, ipv6_addr, suitable
+                    );
+                    if suitable && suitable_addr.is_none() {
+                        suitable_addr = Some(ipv6_addr);
                     }
-                } else {
-                    None
                 }
-            })
-            .next()
-    })
+            }
+            if suitable_addr.is_none() {
+                println!("No suitable IPv6 address found");
+            }
+            suitable_addr
+        }
+        Err(e) => {
+            println!("Error getting interface addresses: {:?}", e);
+            None
+        }
+    }
 }
 
 fn is_suitable_ipv6(addr: &Ipv6Addr) -> bool {
@@ -52,4 +62,3 @@ fn is_suitable_ipv6(addr: &Ipv6Addr) -> bool {
 fn is_link_local(addr: &Ipv6Addr) -> bool {
     addr.segments()[0] & 0xffc0 == 0xfe80
 }
-
