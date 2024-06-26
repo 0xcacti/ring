@@ -160,17 +160,6 @@ impl IPV6Packet {
         }
     }
 
-    // pub struct HeaderIPV6 {
-    //     pub version: u8,       // 4 bits
-    //     pub traffic_class: u8, // 8 bits
-    //     pub flow_label: u32,   // 20 bits
-    //     pub payload_length: u16,
-    //     pub next_header: u8,
-    //     pub hop_limit: u8,
-    //     pub source: [u8; 16],
-    //     pub destination: [u8; 16],
-    // }
-
     pub fn serialize(&self) -> Vec<u8> {
         let mut serialized_packet = Vec::new();
         if let Some(ref header) = self.header {

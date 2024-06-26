@@ -10,14 +10,14 @@ flags.
 TODO: 
 
 
-- [ ] Finish refactor to have IPV4 and IPV6 types
+- [x] Finish refactor to have IPV4 and IPV6 types
 - [ ] Add ipv6 support
-    - [ ] Add ipv6 header generation and serialization
-    - [ ] Add ipv6 icmp header generation and serialization
-    - [ ] Add socket support for ipv6 
+    - [x] Add ipv6 header generation and serialization
+    - [x] Add ipv6 icmp header generation and serialization
+    - [x] Add socket support for ipv6 
+
 
 - [ ] Compute lengths at runtime
-
 - [ ] Echo resoponse parsing 
     - [ ] Create echo response type 
     - [ ] Deserialize echo response into type
