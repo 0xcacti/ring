@@ -23,11 +23,6 @@ pub fn get_machine_ipv4(destination: Ipv4Addr) -> Option<Ipv4Addr> {
     })
 }
 
-// Helper function to check if an IPv6 address is link-local
-fn is_link_local(addr: &Ipv6Addr) -> bool {
-    addr.segments()[0] & 0xffc0 == 0xfe80
-}
-
 pub fn get_machine_ipv6(destination: Ipv6Addr) -> Option<Ipv6Addr> {
     if destination.is_loopback() {
         return Some(Ipv6Addr::LOCALHOST);
@@ -37,10 +32,7 @@ pub fn get_machine_ipv6(destination: Ipv6Addr) -> Option<Ipv6Addr> {
             .into_iter()
             .filter_map(|if_addr| {
                 if let IpAddr::V6(ipv6_addr) = if_addr.addr.ip() {
-                    if !ipv6_addr.is_loopback()
-                        && !is_link_local(&ipv6_addr)
-                        && ipv6_addr.is_global()
-                    {
+                    if is_suitable_ipv6(&ipv6_addr) {
                         Some(ipv6_addr)
                     } else {
                         None
@@ -51,5 +43,13 @@ pub fn get_machine_ipv6(destination: Ipv6Addr) -> Option<Ipv6Addr> {
             })
             .next()
     })
+}
+
+fn is_suitable_ipv6(addr: &Ipv6Addr) -> bool {
+    !addr.is_loopback() && !is_link_local(addr) && !addr.is_unspecified()
+}
+
+fn is_link_local(addr: &Ipv6Addr) -> bool {
+    addr.segments()[0] & 0xffc0 == 0xfe80
 }
 
