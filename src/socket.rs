@@ -11,6 +11,8 @@ use crate::icmp::{IPV4Packet, IPV6Packet};
 pub fn send_and_receive_ipv4_packet(
     packet: IPV4Packet,
     destination: IpAddr,
+    audio: bool,
+    timeout: u64,
 ) -> std::io::Result<()> {
     match destination {
         IpAddr::V6(_) => {
@@ -40,7 +42,7 @@ pub fn send_and_receive_ipv4_packet(
 
     let mut buf: [MaybeUninit<u8>; 1024] = [const { MaybeUninit::uninit() }; 1024];
 
-    let timeout = Duration::from_secs(5); // Timeout for receiving
+    let timeout = Duration::from_millis(timeout); // Timeout for receiving
     let start = Instant::now();
 
     loop {

@@ -15,7 +15,7 @@ pub struct CliArgs {
     pub audio: bool,
 
     #[arg(short = 'c', long, help = "Number of packets to send")]
-    pub count: Option<usize>,
+    pub count: Option<u16>,
 
     #[arg(
         short = 'i',

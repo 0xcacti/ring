@@ -81,6 +81,7 @@ impl IPV4Packet {
         icmp_id: u16,
         ttl: u8,
         include_payload: bool,
+        seq_num: u16,
     ) -> IPV4Packet {
         let payload = if include_payload {
             Some(ICMPPayload::new_random_payload())
@@ -93,7 +94,7 @@ impl IPV4Packet {
                 code: 0,
                 checksum: 0,
                 id: icmp_id,
-                seq_num: 1,
+                seq_num,
             };
             icmp_header.compute_icmp_checksum();
             IPV4Packet {
@@ -110,7 +111,7 @@ impl IPV4Packet {
                 code: 0,
                 checksum: 0,
                 id: icmp_id,
-                seq_num: 1,
+                seq_num,
             };
             icmp_header.compute_icmp_checksum();
             IPV4Packet {
@@ -204,6 +205,7 @@ impl IPV6Packet {
         icmp_id: u16,
         hop_limit: u8,
         include_payload: bool,
+        seq_num: u16,
     ) -> IPV6Packet {
         let payload = if include_payload {
             Some(ICMPPayload::new_random_payload())
@@ -217,7 +219,7 @@ impl IPV6Packet {
                 code: 0,
                 checksum: 0,
                 id: icmp_id,
-                seq_num: 1,
+                seq_num,
             };
             icmp_header.compute_icmp_checksum();
             IPV6Packet {
@@ -232,7 +234,7 @@ impl IPV6Packet {
                 code: 0,
                 checksum: 0,
                 id: icmp_id,
-                seq_num: 1,
+                seq_num,
             };
             icmp_header.compute_icmp_checksum();
             IPV6Packet {

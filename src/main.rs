@@ -23,59 +23,22 @@ fn main() {
     let icmp_id = get_icmp_id(args.id);
 
     match destination_ip {
-        IpAddr::V4(ipv4) => {
-            let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
-            println!("source ip: {}", source_ip);
-            let source = IpAddr::V4(source_ip);
-            let destination = IpAddr::V4(ipv4);
-            let packet = if is_macos {
-                icmp::IPV4Packet::new_echo_request(
-                    true,
-                    source,
-                    destination,
-                    icmp_id,
-                    args.ttl,
-                    args.include_payload,
-                )
-            } else {
-                icmp::IPV4Packet::new_echo_request(
-                    false,
-                    source,
-                    destination,
-                    icmp_id,
-                    args.ttl,
-                    args.include_payload,
-                )
-            };
-
-            socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
-        }
+        IpAddr::V4(ipv4) => match ip::get_machine_ipv4(ipv4) {
+            Some(source_ip) => {
+                let source = IpAddr::V4(source_ip);
+                let destination = IpAddr::V4(ipv4);
+                ring_ipv4(source, destination, is_macos, icmp_id, args);
+            }
+            None => {
+                eprintln!("Couldn't find a suitable IPv4 address. Please check your network configuration.");
+                std::process::exit(1);
+            }
+        },
         IpAddr::V6(ipv6) => match ip::get_machine_ipv6(ipv6) {
             Some(source_ip) => {
-                println!("destination ip: {}", ipv6);
-                println!("source ip: {}", source_ip);
                 let source = IpAddr::V6(source_ip);
                 let destination = IpAddr::V6(ipv6);
-                let packet = if is_macos {
-                    icmp::IPV6Packet::new_echo_request(
-                        true,
-                        source,
-                        destination,
-                        icmp_id,
-                        args.hop_limit,
-                        args.include_payload,
-                    )
-                } else {
-                    icmp::IPV6Packet::new_echo_request(
-                        false,
-                        source,
-                        destination,
-                        icmp_id,
-                        args.hop_limit,
-                        args.include_payload,
-                    )
-                };
-                socket::send_and_receive_ipv6_packet(packet, destination).unwrap();
+                // ADD RING IPV6
             }
             None => {
                 eprintln!("Couldn't find a suitable IPv6 address. Please check your network configuration.");
@@ -83,4 +46,40 @@ fn main() {
             }
         },
     };
+}
+
+fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, args: CliArgs) {
+    let mut i = 0;
+    let loop_condition = if args.count == None {
+        true
+    } else {
+        i < args.count.unwrap()
+    };
+
+    while loop_condition {
+        let packet = if is_macos {
+            icmp::IPV4Packet::new_echo_request(
+                true,
+                source,
+                destination,
+                icmp_id,
+                args.ttl,
+                args.include_payload,
+                i,
+            )
+        } else {
+            icmp::IPV4Packet::new_echo_request(
+                false,
+                source,
+                destination,
+                icmp_id,
+                args.ttl,
+                args.include_payload,
+                i,
+            )
+        };
+        socket::send_and_receive_ipv4_packet(packet, destination, args.audio, args.timeout)
+            .unwrap();
+        i += 1;
+    }
 }
