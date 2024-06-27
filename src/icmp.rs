@@ -68,7 +68,6 @@ impl IPV4Packet {
         is_macos: bool,
         source_ip: IpAddr,
         destination_ip: IpAddr,
-        id: u16,
     ) -> IPV4Packet {
         if is_macos {
             let mut icmp_header = ICMPHeader {

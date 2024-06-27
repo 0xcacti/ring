@@ -1,66 +1,8 @@
 use clap::{crate_version, Parser};
-use ring::{icmp, ip, socket};
+use ring::{cli::App, icmp, ip, socket};
 use std::{env, net::IpAddr};
 
 use anyhow::Result;
-
-#[derive(Debug, Parser)]
-#[command(name="ring", version=crate_version!(), about="ping in rust", long_about = "rust implementation of the classic util ping", arg_required_else_help(true))]
-struct App {
-    #[arg(help = "The ip address or hostname to ping")]
-    host: String,
-
-    #[arg(
-        short = 'a',
-        long,
-        default_value = "false",
-        help = "Audio alert when a packet is received"
-    )]
-    audio: bool,
-
-    #[arg(
-        short = 'c',
-        long,
-        default_value = "None",
-        help = "Number of packets to send"
-    )]
-    count: Option<usize>,
-
-    #[arg(
-        short = 'i',
-        long,
-        default_value = "1000",
-        help = "Time to wait between sending each packet in milliseconds"
-    )]
-    interval: u64,
-
-    #[arg(
-        short = 't',
-        long,
-        default_value = "1000",
-        help = "Time to wait for a response in milliseconds"
-    )]
-    timeout: u64,
-
-    #[arg(short = 'T', long, default_value = "64", help = "TTL for IPV4 packets")]
-    ttl: u8,
-
-    #[arg(
-        short = 'h',
-        long,
-        default_value = "None",
-        help = "Header ID for ICMP packets"
-    )]
-    id: Option<u16>,
-
-    #[arg(
-        short = 'H',
-        long,
-        default_value = "64",
-        help = "Hop limit for IPV6 packets"
-    )]
-    ipv6: u8,
-}
 
 fn main() {
     let args = App::parse();
@@ -81,9 +23,9 @@ fn main() {
             let source = IpAddr::V4(source_ip);
             let destination = IpAddr::V4(ipv4);
             let packet = if is_macos {
-                icmp::IPV4Packet::new_echo_request(true, source, destination, 0x26f2)
+                icmp::IPV4Packet::new_echo_request(true, source, destination)
             } else {
-                icmp::IPV4Packet::new_echo_request(false, source, destination, 0x26f2)
+                icmp::IPV4Packet::new_echo_request(false, source, destination)
             };
 
             socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
