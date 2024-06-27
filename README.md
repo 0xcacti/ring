@@ -22,21 +22,24 @@ TODO:
     - [x] Create echo response type 
     - [x] Deserialize echo response into type
 
-- [ ] Make packet generation more customizable 
+- [x] Make packet generation more customizable 
     - [x] Set customization options in clap
     - [x] Implement defaults 
     - [x] Use the clap args in the actual packet
 
-- [ ] Compute lengths at runtime
-- [ ] Add payloads
+- [x] Compute lengths at runtime
+- [x] Add payloads
+
+- [ ] Collect ping statistics
+    - [ ] Add async pinging so we can handle variable intervals and timeouts
+    - [ ] Add a mutexed stats struct that can be updated by the async pinging
+    - [ ] Add a interruptible loop by ctrl-c that will print the stats at the end
 
 - [ ] Formating 
     - [ ] Decide what should be included in the output 
     - [ ] Add coloration 
     - [ ] See if you can add coloration to clap
 
-- [ ] Collect ping statistics
-- [ ] Add the rest of pings features
 - [ ] Add encapsulation
 - [ ] Clean up errors
 - [ ] Clean up print statements
