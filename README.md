@@ -31,8 +31,8 @@ TODO:
 - [x] Add payloads
 
 - [ ] Collect ping statistics
-    - [ ] Add async pinging so we can handle variable intervals and timeouts
-    - [ ] Add a mutexed stats struct that can be updated by the async pinging
+    - [x] Add async pinging so we can handle variable intervals and timeouts
+    - [x] Add a mutexed stats struct that can be updated by the async pinging
     - [ ] Add a interruptible loop by ctrl-c that will print the stats at the end
 
 - [ ] Formating 

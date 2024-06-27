@@ -1,6 +1,10 @@
 use std::{
     mem::MaybeUninit,
     net::{IpAddr, Ipv6Addr, SocketAddr},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 
@@ -13,6 +17,7 @@ pub fn send_and_receive_ipv4_packet(
     destination: IpAddr,
     audio: bool,
     timeout: u64,
+    running: &Arc<AtomicBool>,
 ) -> std::io::Result<()> {
     match destination {
         IpAddr::V6(_) => {
@@ -39,13 +44,7 @@ pub fn send_and_receive_ipv4_packet(
     let timeout = Duration::from_millis(timeout);
     let start = Instant::now();
 
-    loop {
-        if start.elapsed() > timeout {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::TimedOut,
-                "Timeout reached, no response received.",
-            ))?;
-        }
+    while start.elapsed() < timeout && running.load(Ordering::SeqCst) {
         match socket.recv_from(&mut buf) {
             Ok((number_of_bytes, _)) => {
                 let received_data = unsafe {
@@ -77,6 +76,19 @@ pub fn send_and_receive_ipv4_packet(
             }
             Err(e) => return Err(e), // Propagate unexpected errors
         }
+    }
+    if !running.load(Ordering::SeqCst) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "Ping interrupted",
+        ));
+    }
+
+    if start.elapsed() > timeout {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "Timeout reached, no response received.",
+        ))?;
     }
 
     Ok(())

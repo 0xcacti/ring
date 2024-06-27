@@ -4,13 +4,14 @@ use ring::{
     icmp::{self, get_icmp_id},
     ip, socket,
 };
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     env,
     net::IpAddr,
     sync::Arc,
     time::{Duration, Instant},
 };
-use tokio::{sync::Mutex, time::sleep};
+use tokio::{signal, sync::Mutex, time::sleep};
 
 use anyhow::Result;
 
@@ -64,7 +65,17 @@ async fn ring_ipv4(
     args: CliArgs,
 ) {
     let stats = Arc::new(Mutex::new(Stats::new()));
+    let running = Arc::new(AtomicBool::new(true));
     let mut tasks = Vec::new();
+
+    let running_clone = running.clone();
+    tokio::spawn(async move {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to listen for ctrl-c event");
+        running_clone.store(false, Ordering::SeqCst);
+        println!("\nInterrupted. Finishing current pings and collecting stats...");
+    });
 
     for i in 0..args.count.unwrap_or(u16::MAX) {
         let packet = if is_macos {
@@ -88,8 +99,10 @@ async fn ring_ipv4(
                 i,
             )
         };
+
         let stats = stats.clone();
         let destination = destination;
+        let running = running.clone();
         let task = tokio::spawn(async move {
             let start = Instant::now();
             match socket::send_and_receive_ipv4_packet(
@@ -97,6 +110,7 @@ async fn ring_ipv4(
                 destination,
                 args.audio,
                 args.timeout,
+                &running,
             ) {
                 Ok(_) => {
                     let elapsed = start.elapsed();
