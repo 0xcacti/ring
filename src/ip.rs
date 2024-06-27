@@ -1,5 +1,6 @@
+use crate::error::IPError;
 use get_if_addrs::get_if_addrs;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
 
 pub fn get_machine_ipv4(destination: Ipv4Addr) -> Option<Ipv4Addr> {
     if destination.is_loopback() {
@@ -51,4 +52,22 @@ fn is_suitable_ipv6(addr: &Ipv6Addr) -> bool {
 
 fn is_link_local(addr: &Ipv6Addr) -> bool {
     addr.segments()[0] & 0xffc0 == 0xfe80
+}
+
+pub fn resolve_host(host: &str) -> Result<IpAddr, IPError> {
+    if let Ok(ip) = host.parse() {
+        return Ok(ip);
+    }
+
+    let socket_addrs = (host, 0)
+        .to_socket_addrs()
+        .map_err(|_| IPError::new(format!("Failed to resolve hostname: {}", host)))?;
+
+    socket_addrs
+        .filter_map(|addr| match addr.ip() {
+            IpAddr::V4(ipv4) => Some(IpAddr::V4(ipv4)),
+            IpAddr::V6(ipv6) => Some(IpAddr::V6(ipv6)),
+        })
+        .next()
+        .ok_or_else(|| IPError::new(format!("Failed to resolve hostname: {}", host)))
 }

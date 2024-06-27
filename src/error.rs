@@ -11,3 +11,15 @@ impl ICMPError {
         ICMPError { msg }
     }
 }
+
+#[derive(Debug, Clone, Error)]
+#[error("{msg}")]
+pub struct IPError {
+    pub msg: String,
+}
+
+impl IPError {
+    pub fn new(msg: String) -> Self {
+        IPError { msg }
+    }
+}
