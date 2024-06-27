@@ -22,11 +22,6 @@ pub fn send_and_receive_ipv4_packet(
     }
 
     let serialized_packet = packet.serialize();
-    for byte in serialized_packet.iter() {
-        print!("{:X} ", byte);
-    }
-    println!();
-
     let socket = Socket::new(Domain::IPV4, Type::RAW, Some(Protocol::ICMPV4))?;
     socket.set_nonblocking(true)?;
 
@@ -36,13 +31,12 @@ pub fn send_and_receive_ipv4_packet(
 
     let sockaddr = SocketAddr::new(destination, 0);
     match socket.send_to(&serialized_packet, &sockaddr.into()) {
-        Ok(bytes_sent) => println!("Sent {} bytes", bytes_sent),
-        Err(e) => println!("Failed to send packet: {:?}", e),
+        Ok(_) => {}
+        Err(e) => println!("Failed to send packet: {:?}", e), // TODO: handle error
     }
 
     let mut buf: [MaybeUninit<u8>; 1024] = [const { MaybeUninit::uninit() }; 1024];
-
-    let timeout = Duration::from_millis(timeout); // Timeout for receiving
+    let timeout = Duration::from_millis(timeout);
     let start = Instant::now();
 
     loop {
@@ -51,15 +45,29 @@ pub fn send_and_receive_ipv4_packet(
             break;
         }
         match socket.recv_from(&mut buf) {
-            Ok((number_of_bytes, src_addr)) => {
-                println!("Received {} bytes from {:?}", number_of_bytes, src_addr);
+            Ok((number_of_bytes, _)) => {
                 let received_data = unsafe {
                     std::slice::from_raw_parts(buf.as_ptr() as *const u8, number_of_bytes)
                 };
 
-                let packet = IPV4Packet::deserialize(&received_data);
-                println!("{:?}", packet);
-                break; // Exit after receiving the first response
+                let received_packet = IPV4Packet::deserialize(&received_data);
+                if received_packet.is_err() {
+                    println!("Failed to deserialize packet");
+                    break;
+                }
+
+                let received_packet = received_packet.unwrap();
+
+                if received_packet.icmp_header.seq_num == packet.icmp_header.seq_num {
+                    println!(
+                        "Received {} bytes from {}: icmp_seq={} time={} ms",
+                        number_of_bytes,
+                        destination,
+                        received_packet.icmp_header.seq_num,
+                        start.elapsed().as_millis()
+                    );
+                    return Ok(());
+                }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 // No data available yet, continue to try
@@ -84,10 +92,6 @@ pub fn send_and_receive_ipv6_packet(
     }
 
     let serialized_packet = packet.serialize();
-    for byte in serialized_packet.iter() {
-        print!("{:X} ", byte);
-    }
-    println!();
 
     let socket = Socket::new(Domain::IPV6, Type::RAW, Some(Protocol::ICMPV6))?;
     socket.set_nonblocking(true)?;

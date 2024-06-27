@@ -7,13 +7,15 @@ use ring::{
 use std::{
     env,
     net::IpAddr,
+    sync::Arc,
     time::{Duration, Instant},
 };
 use tokio::{sync::Mutex, time::sleep};
 
 use anyhow::Result;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = CliArgs::parse();
     let is_macos = std::env::consts::OS == "macos";
 
@@ -32,7 +34,8 @@ fn main() {
             Some(source_ip) => {
                 let source = IpAddr::V4(source_ip);
                 let destination = IpAddr::V4(ipv4);
-                ring_ipv4(source, destination, is_macos, icmp_id, args);
+                println!("Ringing {} from {}", destination, source);
+                ring_ipv4(source, destination, is_macos, icmp_id, args).await;
             }
             None => {
                 eprintln!("Couldn't find a suitable IPv4 address. Please check your network configuration.");
@@ -53,9 +56,13 @@ fn main() {
     };
 }
 
-fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, args: CliArgs) {
-    println!("args.count: {:?}", args.count);
-
+async fn ring_ipv4(
+    source: IpAddr,
+    destination: IpAddr,
+    is_macos: bool,
+    icmp_id: u16,
+    args: CliArgs,
+) {
     let stats = Arc::new(Mutex::new(Stats::new()));
     let mut tasks = Vec::new();
 
@@ -82,7 +89,7 @@ fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, 
             )
         };
         let stats = stats.clone();
-        let destination = destination.clone();
+        let destination = destination;
         let task = tokio::spawn(async move {
             let start = Instant::now();
             match socket::send_and_receive_ipv4_packet(
@@ -91,21 +98,20 @@ fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, 
                 args.audio,
                 args.timeout,
             ) {
-                Ok(response) => {
+                Ok(_) => {
                     let elapsed = start.elapsed();
                     let mut stats = stats.lock().await;
                     stats.update_success(elapsed);
                 }
                 Err(e) => {
-                    let mut stats = stats.lock();
+                    eprintln!("Ping failed: {:?}", e);
+                    let mut stats = stats.lock().await;
                     stats.update_failure();
                 }
             }
-
-            // std::thread::sleep(Duration::from_millis(args.interval));
         });
         tasks.push(task);
-        sleep(Duration::from_millis(args.interval));
+        sleep(Duration::from_millis(args.interval)).await;
     }
 
     for task in tasks {
@@ -113,6 +119,7 @@ fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, 
     }
 
     let final_stats = stats.lock().await;
+    // Print final statistics here
 }
 
 #[derive(Debug)]

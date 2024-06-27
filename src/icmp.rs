@@ -425,7 +425,6 @@ mod tests {
         // ipv4
         let mut icmp_header = ICMPHeader::new_echo_request_header(8, 0x1234, 0x001);
         icmp_header.compute_icmp_checksum();
-        print!("{:X}", icmp_header.checksum);
         assert_eq!(icmp_header.checksum, 0xE5CA);
 
         // ipv6
