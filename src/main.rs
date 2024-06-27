@@ -7,13 +7,34 @@ use anyhow::Result;
 #[derive(Debug, Parser)]
 #[command(name="ring", version=crate_version!(), about="ping in rust", long_about = "rust implementation of the classic util ping", arg_required_else_help(true))]
 struct App {
-    /// The ip address or hostname to ping
+    #[arg(help = "The ip address or hostname to ping")]
     host: String,
+
+    #[arg(short = 'a', long, help = "Audio alert when a packet is received")]
+    audio: Option<bool>,
+
+    #[arg(short = 'c', long, help = "Number of packets to send")]
+    count: Option<usize>,
+
+    #[arg(short = 'i', long, help = "Time to wait between sending each packet")]
+    interval: Option<u64>,
+
+    #[arg(short = 't', long, help = "Time to wait for a response")]
+    timeout: Option<u64>,
+
+    #[arg(short = 'T', long, help = "TTL for IPV4 packets")]
+    ttl: Option<u8>,
+
+    #[arg(short = 'h', long, help = "Header ID for ICMP packets")]
+    id: Option<u16>,
+
+    #[arg(short = 'H', long, help = "Hop limit for IPV6 packets")]
+    ipv6: Option<u8>,
 }
 
 fn main() {
     let args = App::parse();
-    let is_macos = std::env::consts::OS == "macos"; // Auto-detect macOS
+    let is_macos = std::env::consts::OS == "macos";
 
     let destination_ip = match ip::resolve_host(&args.host) {
         Ok(ip) => ip,

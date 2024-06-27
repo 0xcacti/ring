@@ -50,12 +50,8 @@ Here is everything that could be customized
         :: Will allow - need to decide how to handle when not IPV6 probably just ignore
 - [ ] ICMP header ID 
         :: Will allow - if not specified will be the process id
-- [ ] ICMP header sequence number ( maybe )
-        :: Will allow - if not specified will the the number of packets sent
 - [ ] Payload
-    - [ ] Can have payload include random bytes 
-    - [ ] Can have payload include a sequence number 
-    - [ ] Can have payload include a timestamp
+        :: not going to have customization, will just be 32 random bytes - room for improvements
 
 ping flags - 
 
