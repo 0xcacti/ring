@@ -9,6 +9,7 @@ use std::{
     net::IpAddr,
     time::{Duration, Instant},
 };
+use tokio::{sync::Mutex, time::sleep};
 
 use anyhow::Result;
 
@@ -53,10 +54,12 @@ fn main() {
 }
 
 fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, args: CliArgs) {
-    let mut i = 0;
     println!("args.count: {:?}", args.count);
 
-    while args.count.map_or(true, |count| i < count) {
+    let stats = Arc::new(Mutex::new(Stats::new()));
+    let mut tasks = Vec::new();
+
+    for i in 0..args.count.unwrap_or(u16::MAX) {
         let packet = if is_macos {
             icmp::IPV4Packet::new_echo_request(
                 true,
@@ -78,11 +81,72 @@ fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, 
                 i,
             )
         };
-        socket::send_and_receive_ipv4_packet(packet, destination, args.audio, args.timeout)
-            .unwrap();
+        let stats = stats.clone();
+        let destination = destination.clone();
+        let task = tokio::spawn(async move {
+            let start = Instant::now();
+            match socket::send_and_receive_ipv4_packet(
+                packet,
+                destination,
+                args.audio,
+                args.timeout,
+            ) {
+                Ok(response) => {
+                    let elapsed = start.elapsed();
+                    let mut stats = stats.lock().await;
+                    stats.update_success(elapsed);
+                }
+                Err(e) => {
+                    let mut stats = stats.lock();
+                    stats.update_failure();
+                }
+            }
 
-        std::thread::sleep(Duration::from_millis(args.interval));
+            // std::thread::sleep(Duration::from_millis(args.interval));
+        });
+        tasks.push(task);
+        sleep(Duration::from_millis(args.interval));
+    }
 
-        i += 1;
+    for task in tasks {
+        task.await.unwrap();
+    }
+
+    let final_stats = stats.lock().await;
+}
+
+#[derive(Debug)]
+struct Stats {
+    success: u32,
+    failure: u32,
+    total_success_time: Duration,
+    avg_success_time: Duration,
+}
+
+impl Stats {
+    fn new() -> Self {
+        Self {
+            success: 0,
+            failure: 0,
+            total_success_time: Duration::from_millis(0),
+            avg_success_time: Duration::from_millis(0),
+        }
+    }
+
+    fn update_success(&mut self, time: Duration) {
+        self.success += 1;
+        self.avg_success_time += time;
+    }
+
+    fn update_failure(&mut self) {
+        self.failure += 1;
+    }
+
+    fn calculate_avg_success_time(&mut self) -> Option<Duration> {
+        if self.success > 0 {
+            Some(self.avg_success_time / self.success)
+        } else {
+            None
+        }
     }
 }
