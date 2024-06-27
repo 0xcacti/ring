@@ -4,7 +4,11 @@ use ring::{
     icmp::{self, get_icmp_id},
     ip, socket,
 };
-use std::{env, net::IpAddr};
+use std::{
+    env,
+    net::IpAddr,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 
@@ -76,6 +80,9 @@ fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, 
         };
         socket::send_and_receive_ipv4_packet(packet, destination, args.audio, args.timeout)
             .unwrap();
+
+        std::thread::sleep(Duration::from_millis(args.interval));
+
         i += 1;
     }
 }
