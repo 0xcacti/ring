@@ -23,7 +23,9 @@ TODO:
     - [x] Deserialize echo response into type
 
 - [ ] Make packet generation more customizable 
-    - [ ] Set customization options
+    - [x] Set customization options in clap
+    - [ ] Implement defaults 
+    - [ ] Use the clap args in the actual packet
 
 - [ ] Compute lengths at runtime
 - [ ] Add payloads

@@ -10,26 +10,56 @@ struct App {
     #[arg(help = "The ip address or hostname to ping")]
     host: String,
 
-    #[arg(short = 'a', long, help = "Audio alert when a packet is received")]
-    audio: Option<bool>,
+    #[arg(
+        short = 'a',
+        long,
+        default_value = "false",
+        help = "Audio alert when a packet is received"
+    )]
+    audio: bool,
 
-    #[arg(short = 'c', long, help = "Number of packets to send")]
+    #[arg(
+        short = 'c',
+        long,
+        default_value = "None",
+        help = "Number of packets to send"
+    )]
     count: Option<usize>,
 
-    #[arg(short = 'i', long, help = "Time to wait between sending each packet")]
-    interval: Option<u64>,
+    #[arg(
+        short = 'i',
+        long,
+        default_value = "1000",
+        help = "Time to wait between sending each packet in milliseconds"
+    )]
+    interval: u64,
 
-    #[arg(short = 't', long, help = "Time to wait for a response")]
-    timeout: Option<u64>,
+    #[arg(
+        short = 't',
+        long,
+        default_value = "1000",
+        help = "Time to wait for a response in milliseconds"
+    )]
+    timeout: u64,
 
-    #[arg(short = 'T', long, help = "TTL for IPV4 packets")]
-    ttl: Option<u8>,
+    #[arg(short = 'T', long, default_value = "64", help = "TTL for IPV4 packets")]
+    ttl: u8,
 
-    #[arg(short = 'h', long, help = "Header ID for ICMP packets")]
+    #[arg(
+        short = 'h',
+        long,
+        default_value = "None",
+        help = "Header ID for ICMP packets"
+    )]
     id: Option<u16>,
 
-    #[arg(short = 'H', long, help = "Hop limit for IPV6 packets")]
-    ipv6: Option<u8>,
+    #[arg(
+        short = 'H',
+        long,
+        default_value = "64",
+        help = "Hop limit for IPV6 packets"
+    )]
+    ipv6: u8,
 }
 
 fn main() {
