@@ -238,31 +238,15 @@ impl IPV6Packet {
     }
 
     pub fn deserialize(data: &[u8]) -> Result<IPV6Packet, ICMPError> {
-        if data.len() < 48 {
-            return Err(ICMPError::new("Packet too short. Invalid".to_string()));
-        }
-
-        let version_tc_fl = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
-        let header = HeaderIPV6 {
-            version: (version_tc_fl >> 28) as u8,
-            traffic_class: ((version_tc_fl >> 20) & 0xFF) as u8,
-            flow_label: version_tc_fl & 0xFFFFF,
-            payload_length: u16::from_be_bytes([data[4], data[5]]),
-            next_header: data[6],
-            hop_limit: data[7],
-            source: data[8..24].try_into().unwrap(),
-            destination: data[24..40].try_into().unwrap(),
-        };
-
         let icmp_header = ICMPHeader {
-            msg_type: data[40],
-            code: data[41],
-            checksum: u16::from_be_bytes([data[42], data[43]]),
-            id: u16::from_be_bytes([data[44], data[45]]),
-            seq_num: u16::from_be_bytes([data[46], data[47]]),
+            msg_type: data[0],
+            code: data[1],
+            checksum: u16::from_be_bytes([data[2], data[3]]),
+            id: u16::from_be_bytes([data[4], data[5]]),
+            seq_num: u16::from_be_bytes([data[6], data[7]]),
         };
 
-        let icmp_payload = if data.len() > 48 {
+        let icmp_payload = if data.len() > 8 {
             let mut payload_data = [0u8; 32];
             let payload_len = std::cmp::min(data.len() - 48, 32);
             payload_data[..payload_len].copy_from_slice(&data[48..48 + payload_len]);
@@ -272,7 +256,7 @@ impl IPV6Packet {
         };
 
         Ok(IPV6Packet {
-            header: Some(header),
+            header: None,
             icmp_header,
             icmp_payload,
         })

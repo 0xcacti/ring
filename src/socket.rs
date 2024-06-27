@@ -54,6 +54,7 @@ pub fn send_and_receive_ipv4_packet(
                 let received_data = unsafe {
                     std::slice::from_raw_parts(buf.as_ptr() as *const u8, number_of_bytes)
                 };
+
                 let packet = IPV4Packet::deserialize(&received_data);
                 println!("{:?}", packet);
                 break; // Exit after receiving the first response
@@ -88,6 +89,8 @@ pub fn send_and_receive_ipv6_packet(
 
     let socket = Socket::new(Domain::IPV6, Type::RAW, Some(Protocol::ICMPV6))?;
     socket.set_nonblocking(true)?;
+    socket.set_only_v6(true)?;
+    socket.set_recv_tclass_v6(true)?;
 
     if packet.header.is_some() {
         socket.set_header_included(true).unwrap();
@@ -111,9 +114,12 @@ pub fn send_and_receive_ipv6_packet(
         match socket.recv_from(&mut buf) {
             Ok((number_of_bytes, src_addr)) => {
                 println!("Received {} bytes from {:?}", number_of_bytes, src_addr);
+                println!("src addr for received data: {:?}", src_addr);
                 let received_data = unsafe {
                     std::slice::from_raw_parts(buf.as_ptr() as *const u8, number_of_bytes)
                 };
+                println!("Raw received data: {:X?}", received_data);
+                println!("src addr for received data: {:?}", src_addr);
                 let packet = IPV6Packet::deserialize(&received_data);
                 println!("{:?}", packet);
                 break; // Exit after receiving the first response

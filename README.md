@@ -17,11 +17,12 @@ TODO:
     - [x] Add socket support for ipv6 
     - [ ] Test it works
 
+- [x] Add domain resoleution
 
 - [ ] Compute lengths at runtime
 
 - [ ] Echo resoponse parsing 
-    - [ ] Create echo response type 
+    - [x] Create echo response type 
     - [ ] Deserialize echo response into type
     
 - [ ] Add payloads
@@ -32,4 +33,3 @@ TODO:
 - [ ] Collect ping statistics
 - [ ] Make packet generation more customizable - sequence number etc
 - [ ] Add encapsulation
-- [ ] Add domain resoleution

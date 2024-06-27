@@ -39,6 +39,7 @@ fn main() {
         }
         IpAddr::V6(ipv6) => match ip::get_machine_ipv6(ipv6) {
             Some(source_ip) => {
+                println!("destination ip: {}", ipv6);
                 println!("source ip: {}", source_ip);
                 let source = IpAddr::V6(source_ip);
                 let destination = IpAddr::V6(ipv6);
