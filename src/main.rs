@@ -29,9 +29,23 @@ fn main() {
             let source = IpAddr::V4(source_ip);
             let destination = IpAddr::V4(ipv4);
             let packet = if is_macos {
-                icmp::IPV4Packet::new_echo_request(true, source, destination, icmp_id, args.ttl)
+                icmp::IPV4Packet::new_echo_request(
+                    true,
+                    source,
+                    destination,
+                    icmp_id,
+                    args.ttl,
+                    args.include_payload,
+                )
             } else {
-                icmp::IPV4Packet::new_echo_request(false, source, destination, icmp_id, args.ttl)
+                icmp::IPV4Packet::new_echo_request(
+                    false,
+                    source,
+                    destination,
+                    icmp_id,
+                    args.ttl,
+                    args.include_payload,
+                )
             };
 
             socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
@@ -49,6 +63,7 @@ fn main() {
                         destination,
                         icmp_id,
                         args.hop_limit,
+                        args.include_payload,
                     )
                 } else {
                     icmp::IPV6Packet::new_echo_request(
@@ -57,6 +72,7 @@ fn main() {
                         destination,
                         icmp_id,
                         args.hop_limit,
+                        args.include_payload,
                     )
                 };
                 socket::send_and_receive_ipv6_packet(packet, destination).unwrap();

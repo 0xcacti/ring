@@ -80,7 +80,13 @@ impl IPV4Packet {
         destination_ip: IpAddr,
         icmp_id: u16,
         ttl: u8,
+        include_payload: bool,
     ) -> IPV4Packet {
+        let payload = if include_payload {
+            Some(ICMPPayload::new_random_payload())
+        } else {
+            None
+        };
         if is_macos {
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
@@ -93,10 +99,11 @@ impl IPV4Packet {
             IPV4Packet {
                 header: None,
                 icmp_header,
-                icmp_payload: None,
+                icmp_payload: payload,
             }
         } else {
-            let mut header = HeaderIPV4::new_ip_header(source_ip, destination_ip, ttl);
+            let mut header =
+                HeaderIPV4::new_ip_header(source_ip, destination_ip, ttl, include_payload);
             header.compute_checksum();
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
@@ -109,7 +116,7 @@ impl IPV4Packet {
             IPV4Packet {
                 header: Some(header),
                 icmp_header,
-                icmp_payload: None,
+                icmp_payload: payload,
             }
         }
     }
@@ -196,7 +203,14 @@ impl IPV6Packet {
         destination_ip: IpAddr,
         icmp_id: u16,
         hop_limit: u8,
+        include_payload: bool,
     ) -> IPV6Packet {
+        let payload = if include_payload {
+            Some(ICMPPayload::new_random_payload())
+        } else {
+            None
+        };
+
         if is_macos {
             let mut icmp_header = ICMPHeader {
                 msg_type: 128, // echo request
@@ -209,7 +223,7 @@ impl IPV6Packet {
             IPV6Packet {
                 header: None,
                 icmp_header,
-                icmp_payload: None,
+                icmp_payload: payload,
             }
         } else {
             let header = HeaderIPV6::new_ip_header(source_ip, destination_ip, hop_limit);
@@ -224,7 +238,7 @@ impl IPV6Packet {
             IPV6Packet {
                 header: Some(header),
                 icmp_header,
-                icmp_payload: None,
+                icmp_payload: payload,
             }
         }
     }
@@ -267,8 +281,8 @@ impl IPV6Packet {
 
         let icmp_payload = if data.len() > 8 {
             let mut payload_data = [0u8; 32];
-            let payload_len = std::cmp::min(data.len() - 48, 32);
-            payload_data[..payload_len].copy_from_slice(&data[48..48 + payload_len]);
+            let payload_len = std::cmp::min(data.len() - 8, 32);
+            payload_data[..payload_len].copy_from_slice(&data[8..8 + payload_len]);
             Some(ICMPPayload { data: payload_data })
         } else {
             None
@@ -283,7 +297,12 @@ impl IPV6Packet {
 }
 
 impl HeaderIPV4 {
-    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, ttl: u8) -> HeaderIPV4 {
+    fn new_ip_header(
+        source_ip: IpAddr,
+        destination_ip: IpAddr,
+        ttl: u8,
+        include_payload: bool,
+    ) -> HeaderIPV4 {
         let source = match source_ip {
             IpAddr::V4(addr) => addr.octets(),
             _ => panic!("Only IPv4 is supported"),
@@ -296,13 +315,15 @@ impl HeaderIPV4 {
 
         let header_id = get_random_header_id();
 
+        let length: u16 = if include_payload { 60 } else { 28 };
+
         HeaderIPV4 {
             version: 4,
             ihl: 5,
             tos: 0,
             // len(Header) + len(ICMPHeader) + 0 (no payload)
             //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
-            length: 28,
+            length: length as u16,
             id: header_id,
             flags: 0,
             fragment_offset: 0,
@@ -380,6 +401,16 @@ impl ICMPHeader {
         let subtotal = msg_code_sum + id_seq_sum;
         let checksum = u16::MAX - subtotal;
         self.checksum = checksum;
+    }
+}
+
+impl ICMPPayload {
+    pub fn new_random_payload() -> ICMPPayload {
+        let mut payload_data = [0u8; 32];
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        rng.fill(&mut payload_data);
+        ICMPPayload { data: payload_data }
     }
 }
 

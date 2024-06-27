@@ -24,8 +24,8 @@ TODO:
 
 - [ ] Make packet generation more customizable 
     - [x] Set customization options in clap
-    - [ ] Implement defaults 
-    - [ ] Use the clap args in the actual packet
+    - [x] Implement defaults 
+    - [x] Use the clap args in the actual packet
 
 - [ ] Compute lengths at runtime
 - [ ] Add payloads
@@ -46,12 +46,6 @@ TODO:
 On customization - 
 
 Here is everything that could be customized
-- [ ] IPV4 TTL
-        :: Will allow - need to decide how to handle when not IPV6 probably just ignore
-- [ ] IPV6 hop limit 
-        :: Will allow - need to decide how to handle when not IPV6 probably just ignore
-- [ ] ICMP header ID 
-        :: Will allow - if not specified will be the process id
 - [ ] Payload
         :: not going to have customization, will just be 32 random bytes - room for improvements
 

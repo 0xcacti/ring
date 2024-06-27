@@ -46,4 +46,12 @@ pub struct CliArgs {
         help = "Hop limit for IPV6 packets"
     )]
     pub hop_limit: u8,
+
+    #[arg(
+        short = 'p',
+        long,
+        default_value = "true",
+        help = "Include payload in ICMP packets"
+    )]
+    pub include_payload: bool,
 }
