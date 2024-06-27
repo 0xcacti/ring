@@ -8,6 +8,6 @@ pub struct ICMPError {
 
 impl ICMPError {
     pub fn new(msg: String) -> Self {
-        IpError { msg }
+        ICMPError { msg }
     }
 }

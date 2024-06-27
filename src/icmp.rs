@@ -1,7 +1,7 @@
 use crate::error::ICMPError;
 use std::net::{IpAddr, Ipv4Addr};
 
-// TODO add encapsulation
+#[derive(Debug)]
 pub struct HeaderIPV4 {
     pub version: u8,
     pub ihl: u8,     // internet header length - in 32-bit words
@@ -17,6 +17,7 @@ pub struct HeaderIPV4 {
     pub destination: [u8; 4],
 }
 
+#[derive(Debug)]
 pub struct HeaderIPV6 {
     pub version: u8,       // 4 bits
     pub traffic_class: u8, // 8 bits
@@ -28,6 +29,7 @@ pub struct HeaderIPV6 {
     pub destination: [u8; 16],
 }
 
+#[derive(Debug)]
 pub struct ICMPHeader {
     pub msg_type: u8,
     pub code: u8,
@@ -36,16 +38,19 @@ pub struct ICMPHeader {
     pub seq_num: u16,
 }
 
+#[derive(Debug)]
 pub struct ICMPPayload {
     pub data: [u8; 32], // TODO: determine maximum size
 }
 
+#[derive(Debug)]
 pub struct IPV4Packet {
     pub header: Option<HeaderIPV4>,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
 }
 
+#[derive(Debug)]
 pub struct IPV6Packet {
     pub header: Option<HeaderIPV6>,
     pub icmp_header: ICMPHeader,
@@ -232,9 +237,9 @@ impl IPV6Packet {
         serialized_packet
     }
 
-    pub fn deserialize(data: &[u8]) -> Result<IPV6Packet> {
+    pub fn deserialize(data: &[u8]) -> Result<IPV6Packet, ICMPError> {
         if data.len() < 48 {
-            return Err("Packet too short for IPv6");
+            return Err(ICMPError::new("Packet too short. Invalid".to_string()));
         }
 
         let version_tc_fl = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
