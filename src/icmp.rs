@@ -1,5 +1,8 @@
-use crate::error::ICMPError;
-use std::net::{IpAddr, Ipv4Addr};
+use crate::{cli::CliArgs, error::ICMPError};
+use std::{
+    net::{IpAddr, Ipv4Addr},
+    process,
+};
 
 #[derive(Debug)]
 pub struct HeaderIPV4 {
@@ -63,18 +66,27 @@ fn get_random_header_id() -> u16 {
     rng.gen_range(0..u16::MAX)
 }
 
+pub fn get_icmp_id(desired_id: Option<u16>) -> u16 {
+    match desired_id {
+        Some(id) => id,
+        None => (process::id() % 0xFFFF) as u16,
+    }
+}
+
 impl IPV4Packet {
     pub fn new_echo_request(
         is_macos: bool,
         source_ip: IpAddr,
         destination_ip: IpAddr,
+        icmp_id: u16,
+        ttl: u8,
     ) -> IPV4Packet {
         if is_macos {
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
                 code: 0,
                 checksum: 0,
-                id: 1234,
+                id: icmp_id,
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
@@ -84,13 +96,13 @@ impl IPV4Packet {
                 icmp_payload: None,
             }
         } else {
-            let mut header = HeaderIPV4::new_ip_header(source_ip, destination_ip);
+            let mut header = HeaderIPV4::new_ip_header(source_ip, destination_ip, ttl);
             header.compute_checksum();
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
                 code: 0,
                 checksum: 0,
-                id: 1234,
+                id: icmp_id,
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
@@ -182,13 +194,15 @@ impl IPV6Packet {
         is_macos: bool,
         source_ip: IpAddr,
         destination_ip: IpAddr,
+        icmp_id: u16,
+        hop_limit: u8,
     ) -> IPV6Packet {
         if is_macos {
             let mut icmp_header = ICMPHeader {
                 msg_type: 128, // echo request
                 code: 0,
                 checksum: 0,
-                id: 1234,
+                id: icmp_id,
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
@@ -198,12 +212,12 @@ impl IPV6Packet {
                 icmp_payload: None,
             }
         } else {
-            let header = HeaderIPV6::new_ip_header(source_ip, destination_ip);
+            let header = HeaderIPV6::new_ip_header(source_ip, destination_ip, hop_limit);
             let mut icmp_header = ICMPHeader {
                 msg_type: 128, // echo request
                 code: 0,
                 checksum: 0,
-                id: 1234,
+                id: icmp_id,
                 seq_num: 1,
             };
             icmp_header.compute_icmp_checksum();
@@ -269,7 +283,7 @@ impl IPV6Packet {
 }
 
 impl HeaderIPV4 {
-    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr) -> HeaderIPV4 {
+    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, ttl: u8) -> HeaderIPV4 {
         let source = match source_ip {
             IpAddr::V4(addr) => addr.octets(),
             _ => panic!("Only IPv4 is supported"),
@@ -292,7 +306,7 @@ impl HeaderIPV4 {
             id: header_id,
             flags: 0,
             fragment_offset: 0,
-            ttl: 64,
+            ttl,
             protocol: 1, // ICMP - 1
             checksum: 0,
             source,
@@ -326,7 +340,7 @@ impl HeaderIPV4 {
 }
 
 impl HeaderIPV6 {
-    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr) -> HeaderIPV6 {
+    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, hop_limit: u8) -> HeaderIPV6 {
         let source = match source_ip {
             IpAddr::V6(addr) => addr.octets(),
             _ => panic!("Only IPv6 is supported"),
@@ -339,11 +353,11 @@ impl HeaderIPV6 {
 
         HeaderIPV6 {
             version: 6,
-            traffic_class: 0, // set to 0
-            flow_label: 0,    // defaults to 0
+            traffic_class: 0,
+            flow_label: 0,
             payload_length: 8,
             next_header: 58,
-            hop_limit: 64, // normal value
+            hop_limit,
             source,
             destination,
         }

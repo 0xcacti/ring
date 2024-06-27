@@ -2,7 +2,7 @@ use clap::{crate_version, Parser};
 
 #[derive(Debug, Parser)]
 #[command(name="ring", version=crate_version!(), about="ping in rust", long_about = "rust implementation of the classic util ping", arg_required_else_help(true))]
-pub struct App {
+pub struct CliArgs {
     #[arg(help = "The ip address or hostname to ping")]
     pub host: String,
 
@@ -45,5 +45,5 @@ pub struct App {
         default_value = "64",
         help = "Hop limit for IPV6 packets"
     )]
-    pub ipv6: u8,
+    pub hop_limit: u8,
 }

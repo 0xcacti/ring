@@ -1,11 +1,15 @@
 use clap::{crate_version, Parser};
-use ring::{cli::App, icmp, ip, socket};
+use ring::{
+    cli::CliArgs,
+    icmp::{self, get_icmp_id},
+    ip, socket,
+};
 use std::{env, net::IpAddr};
 
 use anyhow::Result;
 
 fn main() {
-    let args = App::parse();
+    let args = CliArgs::parse();
     let is_macos = std::env::consts::OS == "macos";
 
     let destination_ip = match ip::resolve_host(&args.host) {
@@ -16,6 +20,8 @@ fn main() {
         }
     };
 
+    let icmp_id = get_icmp_id(args.id);
+
     match destination_ip {
         IpAddr::V4(ipv4) => {
             let source_ip = ip::get_machine_ipv4(ipv4).unwrap();
@@ -23,9 +29,9 @@ fn main() {
             let source = IpAddr::V4(source_ip);
             let destination = IpAddr::V4(ipv4);
             let packet = if is_macos {
-                icmp::IPV4Packet::new_echo_request(true, source, destination)
+                icmp::IPV4Packet::new_echo_request(true, source, destination, icmp_id, args.ttl)
             } else {
-                icmp::IPV4Packet::new_echo_request(false, source, destination)
+                icmp::IPV4Packet::new_echo_request(false, source, destination, icmp_id, args.ttl)
             };
 
             socket::send_and_receive_ipv4_packet(packet, destination).unwrap();
@@ -37,9 +43,21 @@ fn main() {
                 let source = IpAddr::V6(source_ip);
                 let destination = IpAddr::V6(ipv6);
                 let packet = if is_macos {
-                    icmp::IPV6Packet::new_echo_request(true, source, destination)
+                    icmp::IPV6Packet::new_echo_request(
+                        true,
+                        source,
+                        destination,
+                        icmp_id,
+                        args.hop_limit,
+                    )
                 } else {
-                    icmp::IPV6Packet::new_echo_request(false, source, destination)
+                    icmp::IPV6Packet::new_echo_request(
+                        false,
+                        source,
+                        destination,
+                        icmp_id,
+                        args.hop_limit,
+                    )
                 };
                 socket::send_and_receive_ipv6_packet(packet, destination).unwrap();
             }
