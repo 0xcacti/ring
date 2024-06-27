@@ -32,3 +32,4 @@ TODO:
 - [ ] Collect ping statistics
 - [ ] Make packet generation more customizable - sequence number etc
 - [ ] Add encapsulation
+- [ ] Add domain resoleution

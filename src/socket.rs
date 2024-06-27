@@ -111,6 +111,11 @@ pub fn send_and_receive_ipv6_packet(
         match socket.recv_from(&mut buf) {
             Ok((number_of_bytes, src_addr)) => {
                 println!("Received {} bytes from {:?}", number_of_bytes, src_addr);
+                let received_data = unsafe {
+                    std::slice::from_raw_parts(buf.as_ptr() as *const u8, number_of_bytes)
+                };
+                let packet = IPV6Packet::deserialize(&received_data);
+                println!("{:?}", packet);
                 break; // Exit after receiving the first response
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
