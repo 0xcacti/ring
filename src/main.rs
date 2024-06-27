@@ -104,7 +104,7 @@ async fn ring_ipv4(
                     stats.update_success(elapsed);
                 }
                 Err(e) => {
-                    eprintln!("Ping failed: {:?}", e);
+                    eprintln!("{}", e.to_string());
                     let mut stats = stats.lock().await;
                     stats.update_failure();
                 }
@@ -118,8 +118,17 @@ async fn ring_ipv4(
         task.await.unwrap();
     }
 
-    let final_stats = stats.lock().await;
-    // Print final statistics here
+    let mut final_stats = stats.lock().await;
+    let avg_success_time = final_stats.calculate_avg_success_time();
+    println!(
+        "Success: {} Failure: {} Avg Success Time: {}",
+        final_stats.success,
+        final_stats.failure,
+        match avg_success_time {
+            Some(duration) => duration.as_millis().to_string(),
+            None => "N/A".to_string(),
+        }
+    );
 }
 
 #[derive(Debug)]
@@ -127,7 +136,6 @@ struct Stats {
     success: u32,
     failure: u32,
     total_success_time: Duration,
-    avg_success_time: Duration,
 }
 
 impl Stats {
@@ -136,13 +144,12 @@ impl Stats {
             success: 0,
             failure: 0,
             total_success_time: Duration::from_millis(0),
-            avg_success_time: Duration::from_millis(0),
         }
     }
 
     fn update_success(&mut self, time: Duration) {
         self.success += 1;
-        self.avg_success_time += time;
+        self.total_success_time += time;
     }
 
     fn update_failure(&mut self) {
@@ -151,7 +158,7 @@ impl Stats {
 
     fn calculate_avg_success_time(&mut self) -> Option<Duration> {
         if self.success > 0 {
-            Some(self.avg_success_time / self.success)
+            Some(self.total_success_time / self.success)
         } else {
             None
         }

@@ -23,3 +23,15 @@ impl IPError {
         IPError { msg }
     }
 }
+
+#[derive(Debug, Clone, Error)]
+#[error("{msg}")]
+pub struct SocketError {
+    pub msg: String,
+}
+
+impl SocketError {
+    pub fn new(msg: String) -> Self {
+        SocketError { msg }
+    }
+}

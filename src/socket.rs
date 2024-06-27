@@ -41,8 +41,10 @@ pub fn send_and_receive_ipv4_packet(
 
     loop {
         if start.elapsed() > timeout {
-            println!("Timeout reached, no response received.");
-            break;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                "Timeout reached, no response received.",
+            ))?;
         }
         match socket.recv_from(&mut buf) {
             Ok((number_of_bytes, _)) => {
