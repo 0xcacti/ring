@@ -40,7 +40,7 @@ pub struct ICMPHeader {
 
 #[derive(Debug)]
 pub struct ICMPPayload {
-    pub data: [u8; 32], // TODO: determine maximum size
+    pub data: [u8; 32],
 }
 
 #[derive(Debug)]
@@ -55,6 +55,12 @@ pub struct IPV6Packet {
     pub header: Option<HeaderIPV6>,
     pub icmp_header: ICMPHeader,
     pub icmp_payload: Option<ICMPPayload>,
+}
+
+fn get_random_header_id() -> u16 {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    rng.gen_range(0..u16::MAX)
 }
 
 impl IPV4Packet {
@@ -79,7 +85,7 @@ impl IPV4Packet {
                 icmp_payload: None,
             }
         } else {
-            let mut header = HeaderIPV4::new_ip_header(source_ip, destination_ip, id);
+            let mut header = HeaderIPV4::new_ip_header(source_ip, destination_ip);
             header.compute_checksum();
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
@@ -264,9 +270,7 @@ impl IPV6Packet {
 }
 
 impl HeaderIPV4 {
-    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr, id: u16) -> HeaderIPV4 {
-        // let process_id = process::id() as u16;
-
+    fn new_ip_header(source_ip: IpAddr, destination_ip: IpAddr) -> HeaderIPV4 {
         let source = match source_ip {
             IpAddr::V4(addr) => addr.octets(),
             _ => panic!("Only IPv4 is supported"),
@@ -277,6 +281,8 @@ impl HeaderIPV4 {
             _ => panic!("Only IPv4 is supported"),
         };
 
+        let header_id = get_random_header_id();
+
         HeaderIPV4 {
             version: 4,
             ihl: 5,
@@ -284,7 +290,7 @@ impl HeaderIPV4 {
             // len(Header) + len(ICMPHeader) + 0 (no payload)
             //     bytes: [ihl * 4(bytes)] + 2 * 4(bytes) + 32 * 4 + 0
             length: 28,
-            id,
+            id: header_id,
             flags: 0,
             fragment_offset: 0,
             ttl: 64,
