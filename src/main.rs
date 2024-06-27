@@ -50,13 +50,9 @@ fn main() {
 
 fn ring_ipv4(source: IpAddr, destination: IpAddr, is_macos: bool, icmp_id: u16, args: CliArgs) {
     let mut i = 0;
-    let loop_condition = if args.count == None {
-        true
-    } else {
-        i < args.count.unwrap()
-    };
+    println!("args.count: {:?}", args.count);
 
-    while loop_condition {
+    while args.count.map_or(true, |count| i < count) {
         let packet = if is_macos {
             icmp::IPV4Packet::new_echo_request(
                 true,
