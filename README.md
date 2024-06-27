@@ -15,9 +15,11 @@ TODO:
     - [x] Add ipv6 header generation and serialization
     - [x] Add ipv6 icmp header generation and serialization
     - [x] Add socket support for ipv6 
+    - [ ] Test it works
 
 
 - [ ] Compute lengths at runtime
+
 - [ ] Echo resoponse parsing 
     - [ ] Create echo response type 
     - [ ] Deserialize echo response into type

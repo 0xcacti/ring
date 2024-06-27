@@ -10,6 +10,7 @@ get_if_addrs = "0.5.3"
 libc = "0.2.155"
 rand = "0.8.5"
 socket2 = { version = "0.5.7", features = ["all"] }
+thiserror = "1.0.61"
 tokio = { version = "1.32.0", features = ["full"] }
 
 [lib]
