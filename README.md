@@ -44,6 +44,8 @@ TODO:
 - [ ] Clean up errors
 - [ ] Clean up print statements
 
+Must fix the ctrl-c interrupt
+
 
 
 On customization - 
@@ -72,3 +74,6 @@ os configuration, add additional statistics collections, and even include some f
 stats graphing.  You could of course, also have a number of code improvements, such 
 as making the modules more library-like with cleaner APIs that aren't so tightly 
 coupled to the way my CLI works.
+
+
+
