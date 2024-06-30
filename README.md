@@ -44,7 +44,8 @@ TODO:
 - [ ] Clean up errors
 - [ ] Clean up print statements
 
-Must fix the ctrl-c interrupt
+Must fix the ctrl-c interrupt - basically the threads listen but they are still spawning new.  
+I'll try to figure out how to do it in go and then port.  I really despise rust async.
 
 
 
