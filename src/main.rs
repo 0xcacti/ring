@@ -85,7 +85,7 @@ async fn ring_ipv4(
                 destination,
                 icmp_id,
                 args.ttl,
-                args.include_payload,
+                false, // TODO: Add include_payload to cl
                 i,
             )
         } else {
@@ -102,7 +102,7 @@ async fn ring_ipv4(
 
         let stats = stats.clone();
         let destination = destination;
-        let running = running.clone();
+        let running_task = running.clone();
         let task = tokio::spawn(async move {
             let start = Instant::now();
             match socket::send_and_receive_ipv4_packet(
@@ -110,7 +110,7 @@ async fn ring_ipv4(
                 destination,
                 args.audio,
                 args.timeout,
-                &running,
+                &running_task,
             ) {
                 Ok(_) => {
                     let elapsed = start.elapsed();
@@ -118,13 +118,17 @@ async fn ring_ipv4(
                     stats.update_success(elapsed);
                 }
                 Err(e) => {
-                    eprintln!("{}", e.to_string());
                     let mut stats = stats.lock().await;
                     stats.update_failure();
                 }
             }
         });
         tasks.push(task);
+        let running_loop = running.clone();
+        if running_loop.load(Ordering::SeqCst) == false {
+            break;
+        }
+
         sleep(Duration::from_millis(args.interval)).await;
     }
 
@@ -135,7 +139,7 @@ async fn ring_ipv4(
     let mut final_stats = stats.lock().await;
     let avg_success_time = final_stats.calculate_avg_success_time();
     println!(
-        "Success: {} Failure: {} Avg Success Time: {}",
+        "Success: {} Failure: {} - Avg Success Time: {}",
         final_stats.success,
         final_stats.failure,
         match avg_success_time {
