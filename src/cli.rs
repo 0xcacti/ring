@@ -10,7 +10,8 @@ pub struct CliArgs {
         short = 'a',
         long,
         default_value = "false",
-        help = "Audio alert when a packet is received"
+        help = "Audio alert when a packet is received",
+        action = clap::ArgAction::Set
     )]
     pub audio: bool,
 
@@ -51,7 +52,9 @@ pub struct CliArgs {
         short = 'p',
         long,
         default_value = "true",
-        help = "Include payload in ICMP packets"
+        help = "Include payload in ICMP packets",
+        action = clap::ArgAction::Set
+
     )]
     pub include_payload: bool,
 }

@@ -60,6 +60,9 @@ pub fn send_and_receive_ipv4_packet(
                 let received_packet = received_packet.unwrap();
 
                 if received_packet.icmp_header.seq_num == packet.icmp_header.seq_num {
+                    if audio {
+                        println!("\x07"); // Beep
+                    }
                     println!(
                         "Received {} bytes from {}: icmp_seq={} time={} ms",
                         number_of_bytes,

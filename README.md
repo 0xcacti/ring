@@ -29,17 +29,20 @@ TODO:
 
 - [x] Compute lengths at runtime
 - [x] Add payloads
+- [x] Add bell
 
 - [ ] Collect ping statistics
     - [x] Add async pinging so we can handle variable intervals and timeouts
     - [x] Add a mutexed stats struct that can be updated by the async pinging
-    - [ ] Add a interruptible loop by ctrl-c that will print the stats at the end
+    - [x] Add a interruptible loop by ctrl-c that will print the stats at the end
+    - [ ] Figure out how to not include killed pings in the stats
 
 - [ ] Formating 
     - [ ] Decide what should be included in the output 
     - [ ] Add coloration 
     - [ ] See if you can add coloration to clap
 
+- [ ] Figure out why my pay
 - [ ] Add encapsulation
 - [ ] Clean up errors
 - [ ] Clean up print statements
