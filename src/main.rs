@@ -85,7 +85,7 @@ async fn ring_ipv4(
                 destination,
                 icmp_id,
                 args.ttl,
-                false, // TODO: Add include_payload to cl
+                args.include_payload,
                 i,
             )
         } else {
@@ -99,6 +99,8 @@ async fn ring_ipv4(
                 i,
             )
         };
+
+        println!("packet icmp header: {:?}", packet.icmp_header);
 
         let stats = stats.clone();
         let destination = destination;
@@ -139,7 +141,7 @@ async fn ring_ipv4(
     let mut final_stats = stats.lock().await;
     let avg_success_time = final_stats.calculate_avg_success_time();
     println!(
-        "Success: {} Failure: {} - Avg Success Time: {}",
+        "Success: {} Failure: {} - Avg Success Time: {}ms",
         final_stats.success,
         final_stats.failure,
         match avg_success_time {

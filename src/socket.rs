@@ -72,11 +72,9 @@ pub fn send_and_receive_ipv4_packet(
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 // No data available yet, continue to try
-                println!("No data available yet, continue to try");
                 continue;
             }
             Err(e) => {
-                println!("Failed to receive packet: {:?}", e);
                 return Err(e); // Propagate unexpected errors
             }
         }

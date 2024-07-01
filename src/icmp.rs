@@ -88,6 +88,7 @@ impl IPV4Packet {
         } else {
             None
         };
+
         if is_macos {
             let mut icmp_header = ICMPHeader {
                 msg_type: 8, // echo request
@@ -96,7 +97,12 @@ impl IPV4Packet {
                 id: icmp_id,
                 seq_num,
             };
-            icmp_header.compute_icmp_checksum();
+            if let Some(ref payload) = payload {
+                icmp_header.compute_icmp_checksum(Some(&payload.data));
+            } else {
+                icmp_header.compute_icmp_checksum(None);
+            }
+
             IPV4Packet {
                 header: None,
                 icmp_header,
@@ -113,7 +119,11 @@ impl IPV4Packet {
                 id: icmp_id,
                 seq_num,
             };
-            icmp_header.compute_icmp_checksum();
+            if let Some(ref payload) = payload {
+                icmp_header.compute_icmp_checksum(Some(&payload.data));
+            } else {
+                icmp_header.compute_icmp_checksum(None);
+            }
             IPV4Packet {
                 header: Some(header),
                 icmp_header,
@@ -221,7 +231,11 @@ impl IPV6Packet {
                 id: icmp_id,
                 seq_num,
             };
-            icmp_header.compute_icmp_checksum();
+            if let Some(ref payload) = payload {
+                icmp_header.compute_icmp_checksum(Some(&payload.data));
+            } else {
+                icmp_header.compute_icmp_checksum(None);
+            }
             IPV6Packet {
                 header: None,
                 icmp_header,
@@ -236,7 +250,11 @@ impl IPV6Packet {
                 id: icmp_id,
                 seq_num,
             };
-            icmp_header.compute_icmp_checksum();
+            if let Some(ref payload) = payload {
+                icmp_header.compute_icmp_checksum(Some(&payload.data));
+            } else {
+                icmp_header.compute_icmp_checksum(None);
+            }
             IPV6Packet {
                 header: Some(header),
                 icmp_header,
@@ -397,12 +415,28 @@ impl ICMPHeader {
             seq_num,
         }
     }
-    fn compute_icmp_checksum(&mut self) {
-        let msg_code_sum = (self.msg_type as u16) << 8 + self.code as u16;
-        let id_seq_sum = self.id + self.seq_num;
-        let subtotal = msg_code_sum + id_seq_sum;
-        let checksum = u16::MAX - subtotal;
-        self.checksum = checksum;
+
+    fn compute_icmp_checksum(&mut self, payload: Option<&[u8]>) {
+        let mut sum: u32 = 0;
+        sum += (self.msg_type as u32) << 8 | (self.code as u32);
+        sum += self.id as u32 + self.seq_num as u32;
+
+        if let Some(data) = payload {
+            let mut i = 0;
+            while i < data.len() {
+                if i + 1 < data.len() {
+                    sum += (data[i] as u32) << 8 | (data[i + 1] as u32);
+                } else {
+                    sum += (data[i] as u32) << 8;
+                }
+                i += 2;
+            }
+        }
+
+        while (sum >> 16) > 0 {
+            sum = (sum & 0xFFFF) + (sum >> 16);
+        }
+        self.checksum = !(sum as u16);
     }
 }
 
