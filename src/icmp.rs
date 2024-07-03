@@ -456,12 +456,9 @@ mod tests {
 
     #[test]
     fn it_computes_icmp_checksum() {
-        // ipv4
         let mut icmp_header = ICMPHeader::new_echo_request_header(8, 0x1234, 0x001);
-        icmp_header.compute_icmp_checksum();
+        icmp_header.compute_icmp_checksum(None);
         assert_eq!(icmp_header.checksum, 0xE5CA);
-
-        // ipv6
     }
 
     #[test]
@@ -469,7 +466,7 @@ mod tests {
         let source = [10, 10, 10, 2];
         let destination = [10, 10, 10, 1];
         let id = 0xabcd;
-        let mut header = Header {
+        let mut header = HeaderIPV4 {
             version: 4,
             ihl: 5,
             tos: 0,
@@ -493,17 +490,13 @@ mod tests {
         let source = IpAddr::V4(Ipv4Addr::new(192, 168, 146, 131));
         let destination = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let id = 0xabcd;
-        let mut packet = IPV4Packet::new_echo_request(false, source, destination, id);
-
-        match packet {
-            Packet::Linux(ref mut packet_data) => {
-                // override defaults
-                packet_data.icmp_header.id = 0x1234;
-                packet_data.icmp_header.seq_num = 0x001;
-                packet_data.icmp_header.compute_icmp_checksum();
-            }
-            _ => panic!("Expected Linux packet"),
+        let mut packet =
+            IPV4Packet::new_echo_request(false, source, destination, 0x1234, 64, false, 0x001);
+        if let Some(ref mut header) = packet.header {
+            header.id = id;
+            header.compute_checksum();
         }
+        packet.icmp_header.compute_icmp_checksum(None);
 
         let correct_packet_str = "4500001cabcd000040016bd8c0a89283080808080800e5ca12340001";
         let correct_packet: Vec<u8> = correct_packet_str

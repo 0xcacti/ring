@@ -11,11 +11,11 @@ TODO:
 
 
 - [x] Finish refactor to have IPV4 and IPV6 types
-- [ ] Add ipv6 support
+- [x] Add ipv6 support
     - [x] Add ipv6 header generation and serialization
     - [x] Add ipv6 icmp header generation and serialization
     - [x] Add socket support for ipv6 
-    - [ ] Test it works on linux with headers included
+    - [x] Test it works on linux with headers included
 
 - [x] Add domain resoleution
 - [x] Echo resoponse parsing 
@@ -31,41 +31,19 @@ TODO:
 - [x] Add payloads
 - [x] Add bell
 
-- [ ] Collect ping statistics
+- [x] Collect ping statistics
     - [x] Add async pinging so we can handle variable intervals and timeouts
     - [x] Add a mutexed stats struct that can be updated by the async pinging
     - [x] Add a interruptible loop by ctrl-c that will print the stats at the end
-    - [ ] Figure out how to not include killed pings in the stats
+    - [x] Figure out how to not include killed pings in the stats
 
-- [ ] Formating 
-    - [ ] Decide what should be included in the output 
-    - [ ] Add coloration 
-    - [ ] See if you can add coloration to clap
+- [x] Formating 
+    - [x] Decide what should be included in the output - meh it's fine
+    - [x] See if you can add coloration to clap
 
-- [ ] Figure out why my pay
 - [ ] Add encapsulation
 - [ ] Clean up errors
 - [ ] Clean up print statements
-
-Must fix the ctrl-c interrupt - basically the threads listen but they are still spawning new.  
-I'll try to figure out how to do it in go and then port.  I really despise rust async.
-
-
-
-On customization - 
-
-Here is everything that could be customized
-- [ ] Payload
-        :: not going to have customization, will just be 32 random bytes - room for improvements
-
-ping flags - 
-
-- [ ] -a audible ping
-- [ ] -c count - number of pings
-- [ ] -i interval - time to wait between pings 
-- [ ] -t ttl - set ipv4 ttl 
-- [ ] -h hop limit - set ipv6 hop limit
-- [ ] -T timeout - time to wait for a response
 
 
 Potential Improvements - 

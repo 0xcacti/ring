@@ -1,7 +1,9 @@
+use anstyle::{AnsiColor, Color, Style};
 use clap::{crate_version, Parser};
+use colored::*;
 
 #[derive(Debug, Parser)]
-#[command(name="ring", version=crate_version!(), about="ping in rust", long_about = "rust implementation of the classic util ping", arg_required_else_help(true))]
+#[command(name="ring", styles=colorize_app(), version=crate_version!(), about="ping in rust", long_about = "rust implementation of the classic util ping", arg_required_else_help(true))]
 pub struct CliArgs {
     #[arg(help = "The ip address or hostname to ping")]
     pub host: String,
@@ -57,4 +59,12 @@ pub struct CliArgs {
 
     )]
     pub include_payload: bool,
+}
+
+pub fn colorize_app() -> clap::builder::Styles {
+    clap::builder::Styles::styled()
+        .usage(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Green))))
+        .header(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan))))
+        .literal(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Blue))))
+        .placeholder(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Yellow))))
 }

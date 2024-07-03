@@ -101,8 +101,6 @@ async fn ring_ipv4(
             )
         };
 
-        println!("packet icmp header: {:?}", packet.icmp_header);
-
         let stats = stats.clone();
         let destination = destination;
         let running_task = running.clone();
@@ -195,8 +193,6 @@ async fn ring_ipv6(
             )
         };
 
-        println!("packet icmp header: {:?}", packet.icmp_header);
-
         let stats = stats.clone();
         let destination = destination;
         let running_task = running.clone();
@@ -214,10 +210,13 @@ async fn ring_ipv6(
                     let mut stats = stats.lock().await;
                     stats.update_success(elapsed);
                 }
-                Err(e) => {
-                    let mut stats = stats.lock().await;
-                    stats.update_failure();
-                }
+                Err(e) => match e.kind() {
+                    std::io::ErrorKind::Interrupted => {}
+                    _ => {
+                        let mut stats = stats.lock().await;
+                        stats.update_failure();
+                    }
+                },
             }
         });
         tasks.push(task);

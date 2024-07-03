@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anstyle = "1.0.7"
 anyhow = "1.0.86"
 clap = { version = "4.4.6", features = ["derive", "cargo"] }
+colored = "2.1.0"
 get_if_addrs = "0.5.3"
 libc = "0.2.155"
 rand = "0.8.5"
