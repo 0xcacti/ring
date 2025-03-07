@@ -1,4 +1,4 @@
-use clap::{crate_version, Parser};
+use clap::Parser;
 use ring::{
     cli::CliArgs,
     icmp::{self, get_icmp_id},
@@ -6,14 +6,11 @@ use ring::{
 };
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
-    env,
     net::IpAddr,
     sync::Arc,
     time::{Duration, Instant},
 };
 use tokio::{signal, sync::Mutex, time::sleep};
-
-use anyhow::Result;
 
 #[tokio::main]
 async fn main() {
@@ -118,7 +115,7 @@ async fn ring_ipv4(
                     let mut stats = stats.lock().await;
                     stats.update_success(elapsed);
                 }
-                Err(e) => {
+                Err(_e) => {
                     let mut stats = stats.lock().await;
                     stats.update_failure();
                 }
