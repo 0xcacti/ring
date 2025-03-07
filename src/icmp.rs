@@ -1,8 +1,5 @@
-use crate::{cli::CliArgs, error::ICMPError};
-use std::{
-    net::{IpAddr, Ipv4Addr},
-    process,
-};
+use crate::error::ICMPError;
+use std::{net::IpAddr, process};
 
 #[derive(Debug)]
 pub struct HeaderIPV4 {

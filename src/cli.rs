@@ -1,6 +1,5 @@
 use anstyle::{AnsiColor, Color, Style};
 use clap::{crate_version, Parser};
-use colored::*;
 
 #[derive(Debug, Parser)]
 #[command(name="ring", styles=colorize_app(), version=crate_version!(), about="ping in rust", long_about = "rust implementation of the classic util ping", arg_required_else_help(true))]
